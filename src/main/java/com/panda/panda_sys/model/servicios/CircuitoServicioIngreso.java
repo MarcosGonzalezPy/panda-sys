@@ -2,7 +2,6 @@ package com.panda.panda_sys.model.servicios;
 
 public class CircuitoServicioIngreso extends CircuitoServicio{
 
-	private String secuencia;
 	private String paso;
 	private String cliente;
 	private String correo;
@@ -10,14 +9,6 @@ public class CircuitoServicioIngreso extends CircuitoServicio{
 	private String telefono;
 	private String detalleEquipo;
 	private String detalleTrabajo;
-
-	public String getSecuencia() {
-		return secuencia;
-	}
-
-	public void setSecuencia(String secuencia) {
-		this.secuencia = secuencia;
-	}
 
 	public String getPaso() {
 		return paso;

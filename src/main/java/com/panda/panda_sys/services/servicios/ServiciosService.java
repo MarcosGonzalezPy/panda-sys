@@ -1,6 +1,8 @@
 package com.panda.panda_sys.services.servicios;
 
 import java.awt.datatransfer.StringSelection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -70,47 +72,37 @@ public class ServiciosService extends Conexion{
 	}
     
     public boolean ingresarEquipo(CircuitoServicioIngreso entidad) throws SQLException{
-    	Statement statement = con.ObtenerConexion().createStatement();
-    	try { 
-    		String sql0 = "select * from  circuito_servicio where ";
-    		rs = statement.executeQuery(sql0);
-            while(rs.next()){
-            	CircuitoServicio entidad0 = new CircuitoServicio();
-            	entidad0.setSecuencia(rs.getString("secuencia"));
-            	entidad0.setEstado(rs.getString("estado"));
-            	entidad0.setPaso(rs.getString("paso"));
-            	entidad0.setLugar(rs.getString("lugar"));
-            	entidad0.setResponsable(rs.getString("responsable"));
-            	entidad0.setFecha(rs.getString("fecha"));    
-            	entidad0.setObservacion(rs.getString("observacion"));
-            }
-            
+    	Connection c = ObtenerConexion();
+    	try {
+    		c.setAutoCommit(false);
     		String sql = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha,observacion) "
-    				+ "values ( "
-    				+ " "+entidad.getSecuencia()+" ,"
-    				+ " '"+entidad.getEstado()+"',"
-    				+ " '"+entidad.getPaso()+"',"
-    				+ "'"+entidad.getLugar()+"',"
-    				+ "'"+entidad.getResponsable()+"',"
-    				+ "'"+new Date(System.currentTimeMillis())+"',"
-    				+ "'"+entidad.getObservacion()+"'"
-    				+ ");";
-    		
-    		statement.execute(sql);	
-    		String sql2= "insert into circuito_servicio_ingreso (secuencia, paso, cliente, correo, encargado,telefono, detalle_equipo, detalle_trabajo) values ("
-    				+ " "+entidad.getSecuencia()+" ,"
-    				+ " "+entidad.getPaso()+" ,"
-    				+ " '"+entidad.getCliente()+"' ,"
-    				+ " '"+entidad.getCorreo()+"' ,"
-    				+ " '"+entidad.getEncargado()+"' ,"
-    				+ " '"+entidad.getTelefono()+"' ,"
-    				+ " '"+entidad.getDetalleEquipo()+"' ,"
-    				+ " '"+entidad.getDetalleTrabajo()+"' "
-    				+ ");";
-    		//Statement statement2 = con.ObtenerConexion().createStatement();
-    		statement.execute(sql2);	
+    				+ "values (?,?,?,?,?,current_date,?);";	
+    		PreparedStatement ps=c.prepareStatement(sql); 
+    		ps.setInt(1, Integer.parseInt(entidad.getSecuencia()));
+    		ps.setString(2, entidad.getEstado());
+    		ps.setInt(3,  Integer.parseInt(entidad.getPaso()));
+    		ps.setString(4, entidad.getLugar());
+    		ps.setString(5, entidad.getResponsable());
+    		ps.setString(6, entidad.getObservacion());
+    		ps.execute();	
+    		String sql2= "insert into circuito_servicio_ingreso (secuencia, paso, cliente, correo, encargado,telefono, detalle_equipo, detalle_trabajo)"
+    				+ " values (?,?,?,?,?,?,?,?);";
+    		PreparedStatement ps2 = c.prepareStatement(sql2);
+    		ps2.setInt(1, Integer.parseInt(entidad.getSecuencia()));
+    		ps2.setInt(2, Integer.parseInt(entidad.getPaso()));
+    		ps2.setString(3, entidad.getCliente());
+    		ps2.setString(4, entidad.getCorreo());
+    		ps2.setString(5, entidad.getEncargado());
+    		ps2.setString(6, entidad.getTelefono());
+    		ps2.setString(7, entidad.getDetalleEquipo());
+    		ps2.setString(8, entidad.getDetalleTrabajo());
+    		ps2.execute();
+    		c.commit();
+    		c.close();
     		return true;
 		} catch (Exception e) {
+			c.close();
+			System.out.println("ERROR "+e.getMessage());
 			return false;
 		}
 		

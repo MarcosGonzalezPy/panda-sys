@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -37,18 +38,23 @@ public class ServiciosResource {
 		return Response.ok(secuencia).header("Access-Control-Allow-Origin", "*").build();
 	}
 	
-	@GET
+	@POST
 	@Path("/ingresar-equipo")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response ingresarEquipo(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, IOException {
+		Boolean respuesta = null;
 		ServiciosService serviciosService = new ServiciosService();
 		CircuitoServicioIngreso entidad = new CircuitoServicioIngreso();
 		if(!paramJson.equals("")){
 			ObjectMapper mapper = new ObjectMapper();
 			entidad = mapper.readValue(paramJson, CircuitoServicioIngreso.class);
 		}	
-		serviciosService.ingresarEquipo(entidad);
-		return Response.ok().header("Access-Control-Allow-Origin", "*").build();
+		respuesta= serviciosService.ingresarEquipo(entidad);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();	
 	}
 	
 	@GET
