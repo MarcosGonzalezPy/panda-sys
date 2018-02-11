@@ -2,68 +2,62 @@ package com.panda.panda_sys.model.servicios;
 
 public class CircuitoServicioIngreso extends CircuitoServicio{
 
-	private String paso;
-	private String cliente;
+	private Long cliente;
+	private Long encargado;
 	private String correo;
-	private String encargado;
 	private String telefono;
 	private String detalleEquipo;
 	private String detalleTrabajo;
+	private String clienteNombreApellido;
+	private String encargadoNombreApellido;
 
-	public String getPaso() {
-		return paso;
-	}
-
-	public void setPaso(String paso) {
-		this.paso = paso;
-	}
-
-	public String getCliente() {
+	public Long getCliente() {
 		return cliente;
 	}
-
-	public void setCliente(String cliente) {
+	public void setCliente(Long cliente) {
 		this.cliente = cliente;
 	}
-
+	public Long getEncargado() {
+		return encargado;
+	}
+	public void setEncargado(Long encargado) {
+		this.encargado = encargado;
+	}
 	public String getCorreo() {
 		return correo;
 	}
-
 	public void setCorreo(String correo) {
 		this.correo = correo;
 	}
-
-	public String getEncargado() {
-		return encargado;
-	}
-
-	public void setEncargado(String encargado) {
-		this.encargado = encargado;
-	}
-
 	public String getTelefono() {
 		return telefono;
 	}
-
 	public void setTelefono(String telefono) {
 		this.telefono = telefono;
 	}
-
 	public String getDetalleEquipo() {
 		return detalleEquipo;
 	}
-
 	public void setDetalleEquipo(String detalleEquipo) {
 		this.detalleEquipo = detalleEquipo;
 	}
-
 	public String getDetalleTrabajo() {
 		return detalleTrabajo;
 	}
-
 	public void setDetalleTrabajo(String detalleTrabajo) {
 		this.detalleTrabajo = detalleTrabajo;
 	}
-
+	public String getClienteNombreApellido() {
+		return clienteNombreApellido;
+	}
+	public void setClienteNombreApellido(String clienteNombreApellido) {
+		this.clienteNombreApellido = clienteNombreApellido;
+	}
+	public String getEncargadoNombreApellido() {
+		return encargadoNombreApellido;
+	}
+	public void setEncargadoNombreApellido(String encargadoNombreApellido) {
+		this.encargadoNombreApellido = encargadoNombreApellido;
+	}
+	
 }

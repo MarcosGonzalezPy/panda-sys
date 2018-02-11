@@ -1,6 +1,5 @@
 package com.panda.panda_sys.services.servicios;
 
-import java.awt.datatransfer.StringSelection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,9 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.panda.panda_sys.model.catalogo.Dominios;
 import com.panda.panda_sys.model.catalogo.Servicios;
-import com.panda.panda_sys.model.personas.Clientes;
 import com.panda.panda_sys.model.servicios.CircuitoServicio;
 import com.panda.panda_sys.model.servicios.CircuitoServicioIngreso;
 import com.panda.panda_sys.util.Conexion;
@@ -90,9 +87,9 @@ public class ServiciosService extends Conexion{
     		PreparedStatement ps2 = c.prepareStatement(sql2);
     		ps2.setInt(1, Integer.parseInt(entidad.getSecuencia()));
     		ps2.setInt(2, Integer.parseInt(entidad.getPaso()));
-    		ps2.setString(3, entidad.getCliente());
+    		ps2.setLong(3, entidad.getCliente());
     		ps2.setString(4, entidad.getCorreo());
-    		ps2.setString(5, entidad.getEncargado());
+    		ps2.setLong(5, entidad.getEncargado());
     		ps2.setString(6, entidad.getTelefono());
     		ps2.setString(7, entidad.getDetalleEquipo());
     		ps2.setString(8, entidad.getDetalleTrabajo());
@@ -172,5 +169,35 @@ public class ServiciosService extends Conexion{
 		
 	}
 
+    public CircuitoServicioIngreso obtenerIngreso(Long secuencia) throws SQLException{
+    	CircuitoServicioIngreso entidad = new CircuitoServicioIngreso();
+    	Connection c = ObtenerConexion();
+    	try {
+    		String sql = " select  cs.observacion, p.nombre ||' '||p.apellido \"cliente_nombre_apellido\","
+    				+ " pp.nombre ||' '||pp.apellido \"encargado_nombre_apellido\",c.* "
+    				+ " from personas p, circuito_servicio_ingreso c, personas pp, circuito_servicio cs "
+    				+ " where c.cliente = p.codigo  and c.encargado = pp.codigo "
+    				+ " and cs.secuencia = c.secuencia and c.secuencia = ? ";
+    		PreparedStatement ps =c.prepareStatement(sql);
+    		ps.setLong(1, secuencia);
+    		ResultSet rs = ps.executeQuery();
+    		while(rs.next()){
+    			entidad.setCliente(rs.getLong("cliente"));
+    			entidad.setClienteNombreApellido(rs.getString("cliente_nombre_apellido"));
+    			entidad.setEncargado(rs.getLong("encargado"));
+    			entidad.setEncargadoNombreApellido("encargado_nombre_apellido");
+    			entidad.setCorreo(rs.getString("correo"));
+    			entidad.setTelefono(rs.getString("telefono"));
+    			entidad.setDetalleEquipo(rs.getString("detalle_equipo"));
+    			entidad.setDetalleTrabajo(rs.getString("detalle_trabajo"));
+    			entidad.setObservacion(rs.getString("observacion"));
+    		}
+    		c.close();    		
+		} catch (Exception e) {
+			System.out.println("ERROR "+e.getMessage());
+			c.close();
+		}
+    	return entidad;
+    }
 
 }

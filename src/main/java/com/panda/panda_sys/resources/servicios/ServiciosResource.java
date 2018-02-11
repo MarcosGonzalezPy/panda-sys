@@ -10,6 +10,7 @@ import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -28,6 +29,7 @@ import com.panda.panda_sys.services.personas.ClientesService;
 import com.panda.panda_sys.services.servicios.ServiciosService;
 
 @Path("/servicios")
+@Produces(MediaType.APPLICATION_JSON)
 public class ServiciosResource {
 	
 	@GET
@@ -40,7 +42,6 @@ public class ServiciosResource {
 	
 	@POST
 	@Path("/ingresar-equipo")
-	@Produces(MediaType.APPLICATION_JSON)
 	public Response ingresarEquipo(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, IOException {
 		Boolean respuesta = null;
 		ServiciosService serviciosService = new ServiciosService();
@@ -74,7 +75,6 @@ public class ServiciosResource {
 	
 	@GET
 	@Path("/listar-servicio")
-	@Produces(MediaType.APPLICATION_JSON)
 	public Response listarServicio(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, IOException {
 		ServiciosService serviciosService = new ServiciosService();
 		Servicios servicios = new Servicios();
@@ -102,6 +102,16 @@ public class ServiciosResource {
 		List<CircuitoServicio> lista = serviciosService.listarCircuito(entidad, valor);
 		Gson gson = new Gson();
 		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();		
+	}
+	
+	@GET
+	@Path("/ingreso/{secuencia}")
+	public Response listarIngreso(@PathParam("secuencia")Long secuencia) throws JsonParseException, JsonMappingException, IOException, SQLException{
+		ServiciosService serviciosService = new ServiciosService();
+		CircuitoServicioIngreso entidad = serviciosService.obtenerIngreso(secuencia);
+		Gson gson = new Gson();
+		String json = gson.toJson(entidad);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();		
 	}
 
