@@ -1,6 +1,6 @@
-package com.panda.panda_sys.model.catalogo;
+package com.panda.panda_sys.param;
 
-public class Servicios {
+public class ServiciosParam {
 	
 	private Integer codigo;
 	private String descripcion;

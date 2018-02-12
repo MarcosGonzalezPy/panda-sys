@@ -114,5 +114,53 @@ public class ServiciosResource {
 		String json = gson.toJson(entidad);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();		
 	}
+	
+
+	@GET
+	@Path("/insertar-servicios")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response insertar(@QueryParam("paramJson") String paramJson)
+			throws SQLException, JsonParseException, IOException {
+		ServiciosService serviciosService = new ServiciosService();
+		Servicios servicios = new Servicios();
+		if (!paramJson.equals("")) {
+			ObjectMapper mapper = new ObjectMapper();
+			servicios = mapper.readValue(paramJson, Servicios.class);
+		}
+		boolean result = serviciosService.insertarServicio(servicios);
+		Gson gson = new Gson();
+		String json = gson.toJson(result);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+
+	@GET
+	@Path("/eliminar-id/{codigo}")
+
+	public Response eliminarById(@PathParam("codigo") Integer codigo) throws SQLException {
+		ServiciosService serviciosService = new ServiciosService();
+		boolean result = serviciosService.eliminarServicio(codigo);
+		Gson gson = new Gson();
+		String json = gson.toJson(result);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@POST
+	@Path("/modificar")
+	public Response editarServicios(@QueryParam("paramJson") String paramJson)
+			throws JsonParseException, JsonMappingException, IOException, SQLException{
+		Boolean respuesta = null;
+		Servicios servicios = new Servicios();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			servicios = mapper.readValue(paramJson, Servicios.class);
+		}	
+		ServiciosService serviciosService = new ServiciosService();
+		respuesta = serviciosService.modificarServicios(servicios);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();		
+	}
 
 }

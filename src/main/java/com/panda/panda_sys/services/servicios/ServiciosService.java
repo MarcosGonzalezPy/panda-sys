@@ -58,10 +58,11 @@ public class ServiciosService extends Conexion{
 		rs = statement.executeQuery(sql);
         while(rs.next()){
         	Servicios entidad = new Servicios();
-        	entidad.setCodigo(rs.getString("codigo"));
+        	entidad.setCodigo(rs.getInt("codigo"));
         	entidad.setDescripcion(rs.getString("descripcion"));
-        	entidad.setPrecioUnitario(rs.getString("precio_unitario"));
-        	entidad.setPrecioUnitario(rs.getString("precio_unitario"));
+        	entidad.setPrecioUnitario(rs.getInt("precio_unitario"));
+        	entidad.setGrabado(rs.getInt("grabado"));
+        	entidad.setEstado(rs.getString("estado"));
         	lista.add(entidad);
         }
 
@@ -199,5 +200,40 @@ public class ServiciosService extends Conexion{
 		}
     	return entidad;
     }
+    
+	public boolean insertarServicio(Servicios servicios) throws SQLException {
+		String sql = "insert into servicios ( codigo, descripcion, precio_unitario, grabado, estado) " + "values (('"
+				+ servicios.getCodigo() + "'), UPPER('" + servicios.getDescripcion() + "') ,('"
+				+ servicios.getPrecioUnitario() + "'),('" + servicios.getGrabado() + "'), UPPER('"
+				+ servicios.getEstado() + "') );";
+		Statement statement = con.ObtenerConexion().createStatement();
+		statement.execute(sql);
+		return true;
+	}
+
+	public boolean eliminarServicio(Integer codigo) throws SQLException {
+		String sql = "delete from servicios where codigo = '" + codigo + "'  ";
+		Statement stmt = con.ObtenerConexion().createStatement();
+		stmt.execute(sql);
+		return true;
+	}
+
+	public boolean modificarServicios(Servicios servicios) throws SQLException {
+		Connection c = ObtenerConexion();
+		try {
+			String sql = "update servicios set descripcion = UPPER( ? ), estado = ?" + "where codigo = ?";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, servicios.getDescripcion());
+			ps.setString(2, servicios.getEstado());
+			ps.setInt(3, servicios.getCodigo());
+			ps.execute();
+
+			c.close();
+			return true;
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
+	}
 
 }
