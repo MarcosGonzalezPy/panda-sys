@@ -1,5 +1,7 @@
 package com.panda.panda_sys.services.catalogo;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -10,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.panda.panda_sys.model.catalogo.CuentasBancarias;
+import com.panda.panda_sys.model.catalogo.Servicios;
+import com.panda.panda_sys.param.CuentasBancariasParam;
 import com.panda.panda_sys.util.Conexion;
 
 public class CuentasBancariasService extends Conexion {
@@ -37,7 +41,7 @@ public class CuentasBancariasService extends Conexion {
 			} else {
 				conector = " where ";
 			}
-			sql = sql + conector + " UPPER(estado) like UPPER('%" + cuentasBancarias.getEstado() + "%') ";
+			sql = sql + conector + " estado = '" + cuentasBancarias.getEstado() + "' ";
 		}
 
 		if (cuentasBancarias.getBanco() != null) {
@@ -57,7 +61,7 @@ public class CuentasBancariasService extends Conexion {
 			} else {
 				conector = " where ";
 			}
-			sql = sql + conector + " UPPER(numero) like UPPER('%" + cuentasBancarias.getNumero() + "%') ";
+			sql = sql + conector + " numero like '%" + cuentasBancarias.getNumero() + "%' ";
 		}
 
 		Statement statement = con.ObtenerConexion().createStatement();
@@ -72,8 +76,55 @@ public class CuentasBancariasService extends Conexion {
 			entidad.setFechaCreacion(rs.getDate("fecha_creacion"));
 			lista.add(entidad);
 		}
-
 		return lista;
+	}
+
+	public boolean insertar(CuentasBancarias cuentasBancarias) throws SQLException {
+		Date fecha = new Date();
+		try { 
+			String sql = "insert into cuenta_bancaria ( estado, banco, numero, fecha_creacion, usuario) " + "values ( '"
+					+ cuentasBancarias.getEstado() + "', UPPER('" + cuentasBancarias.getBanco() + "') , '"
+					+ cuentasBancarias.getNumero() + "' ,  '" + fecha+ "' ,  '" + cuentasBancarias.getUsuario()
+					+ "'  );";
+			Statement statement = con.ObtenerConexion().createStatement();
+			statement.execute(sql);
+		} catch (Exception e) {
+			System.out.println("ERROR: " + e.getMessage());
+			return false;
+		}
+
+		return true;
+	}
+
+	public boolean eliminar(Integer codigo) throws SQLException {
+		try {
+			String sql = "delete from cuenta_bancaria where codigo = '" + codigo + "'  ";
+			Statement stmt = con.ObtenerConexion().createStatement();
+			stmt.execute(sql);
+		} catch (Exception e) {
+			System.out.println("ERROR: " + e.getMessage());
+			return false;
+		}
+		return true;
+	}
+
+	public boolean modificar(CuentasBancarias cuentasBancarias) throws SQLException {
+		Date fecha = new Date();
+		Connection c = ObtenerConexion();
+		try {
+			String sql = "update cuenta_bancaria set estado = ?, banco = UPPER( ? ), numero = ?" + "where codigo = ?";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, cuentasBancarias.getEstado());
+			ps.setString(2, cuentasBancarias.getBanco());
+			ps.setString(3, cuentasBancarias.getNumero());
+			ps.setInt(4, cuentasBancarias.getCodigo());
+			ps.execute();
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
+		return true;
 	}
 
 }

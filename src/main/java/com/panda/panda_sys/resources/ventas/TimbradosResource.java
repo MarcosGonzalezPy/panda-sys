@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -19,9 +20,11 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
+import com.panda.panda_sys.model.catalogo.Servicios;
 import com.panda.panda_sys.model.personas.Usuarios;
 import com.panda.panda_sys.model.ventas.Timbrados;
 import com.panda.panda_sys.services.personas.UsuariosService;
+import com.panda.panda_sys.services.servicios.ServiciosService;
 import com.panda.panda_sys.services.ventas.TimbradosService;
 
 
@@ -72,6 +75,25 @@ public class TimbradosResource {
 		Gson gson = new Gson();
 		String json = gson.toJson(result);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+
+	@POST
+	@Path("/modificar")
+	public Response editar(@QueryParam("paramJson") String paramJson)
+			throws JsonParseException, JsonMappingException, IOException, SQLException{
+		Boolean respuesta = null;
+		Timbrados timbrados= new Timbrados();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			timbrados = mapper.readValue(paramJson, Timbrados.class);
+		}	
+		TimbradosService timbradosService = new TimbradosService();
+		respuesta = timbradosService.modificar(timbrados);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();		
 	}
 
 

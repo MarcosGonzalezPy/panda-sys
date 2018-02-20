@@ -202,12 +202,17 @@ public class ServiciosService extends Conexion{
     }
     
 	public boolean insertarServicio(Servicios servicios) throws SQLException {
-		String sql = "insert into servicios ( codigo, descripcion, precio_unitario, grabado, estado) " + "values (('"
-				+ servicios.getCodigo() + "'), UPPER('" + servicios.getDescripcion() + "') ,('"
-				+ servicios.getPrecioUnitario() + "'),('" + servicios.getGrabado() + "'), UPPER('"
-				+ servicios.getEstado() + "') );";
-		Statement statement = con.ObtenerConexion().createStatement();
-		statement.execute(sql);
+		try {
+			String sql = "insert into servicios ( descripcion, precio_unitario, grabado, estado) " + "values ( UPPER('" + servicios.getDescripcion() + "') ,('"
+					+ servicios.getPrecioUnitario() + "'),('" + servicios.getGrabado() + "'), UPPER('"
+					+ servicios.getEstado() + "') );";
+			Statement statement = con.ObtenerConexion().createStatement();
+			statement.execute(sql);
+		} catch (Exception e) {
+			System.out.println("ERROR: " +e.getMessage());
+			return false;
+		}
+
 		return true;
 	}
 

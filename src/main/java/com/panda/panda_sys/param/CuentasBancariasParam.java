@@ -1,6 +1,6 @@
 package com.panda.panda_sys.param;
 
-import java.util.Date;
+import java.sql.Date;
 
 public class CuentasBancariasParam {
 
@@ -8,6 +8,8 @@ public class CuentasBancariasParam {
 	private String estado;
 	private String banco;
 	private String numero;
+	private Date fechaCreacion;
+	private String usuario;
 
 	public Integer getCodigo() {
 		return codigo;
@@ -39,5 +41,21 @@ public class CuentasBancariasParam {
 
 	public void setNumero(String numero) {
 		this.numero = numero;
+	}
+
+	public Date getFechaCreacion() {
+		return fechaCreacion;
+	}
+
+	public void setFechaCreacion(Date fechaCreacion) {
+		this.fechaCreacion = fechaCreacion;
+	}
+
+	public String getUsuario() {
+		return usuario;
+	}
+
+	public void setUsuario(String usuario) {
+		this.usuario = usuario;
 	}
 }
