@@ -119,7 +119,7 @@ public class CajasService extends Conexion{
 		CajaTimbrado cajaTimbrado =  new CajaTimbrado();
 		try {
 			String sql =" select a.*, b.expedicion, b.sucursal from cajas_movimientos a, cajas b "
-				+ " where b.codigo = a.codigo_caja and a.estado = 'HABILITADO' "
+				+ " where b.codigo = a.codigo_caja and a.estado = 'ABIERTO' "
 				+ "and usuario = '"+usuario+"'";
 			Statement statement = con.ObtenerConexion().createStatement();
 			rs = statement.executeQuery(sql);

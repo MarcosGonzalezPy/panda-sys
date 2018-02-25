@@ -67,37 +67,44 @@ public class VentasService extends Conexion {
 	}
 
 	public boolean registrarVenta(Factura factura) throws SQLException {
-		try {
-			FacturaCabecera c = factura.getCabecera();
+		Connection c = ObtenerConexion();
+		try {			
+			c.setAutoCommit(false);
+			FacturaCabecera fc = factura.getCabecera();
+			String sql1 = "insert into factura_cabecera(numero_factura, cliente, ruc, telefono, sucursal, fecha, usuario, estado, codigo_persona)"
+					+ "values(?,?,?,?,?,?,?,?,?)";
+			PreparedStatement ps1 = c.prepareStatement(sql1);
+			ps1.setString(1, fc.getNumeroFactura());
+			ps1.setString(2, fc.getCliente());
+			ps1.setString(3, fc.getRuc());
+			ps1.setString(4, fc.getTelefono());
+			ps1.setString(5, fc.getSucursal());
+			ps1.setDate(6, new Date(System.currentTimeMillis()));
+			ps1.setString(7, fc.getUsuario());
+			ps1.setString(8, fc.getEstado());
+			ps1.setLong(9, fc.getCodigoPersona());
+			ps1.execute();
+						
 			List<FacturaDetalle> listaDetalle = factura.getDetalle();
-			String sql1 = " insert into factura_cabecera (numero_factura, timbrado, cliente, "
-					+ " ruc, telefono, sucursal, caja, condicion_compra, medio_pago, condicion_pago,"
-					+ " cuotas, fecha, usuario, estado, codigo_persona, cajero" + ") values ('" + c.getNumeroFactura()
-					+ "'," + "  null, " // '"+c.getTimbrado()+"',"
-					+ "'" + c.getCliente() + "', '" + c.getRuc() + "'," + "'" + c.getTelefono() + "', '"
-					+ c.getSucursal() + "', " + " null, " // "+c.getCaja()+",
-					+ " null,null,null,null,current_date,'" + c.getUsuario() + "'," + "'BORRADOR',"
-					+ c.getCodigoPersona() + ", null )";
-			Statement statement = con.ObtenerConexion().createStatement();
-			statement.execute(sql1);
 			for (FacturaDetalle det : listaDetalle) {
-				/*
-				 * if(!det.getTipo().equals("S")){ String sql2=
-				 * " update inventario  set cantidad = cantidad -"+det.
-				 * getCantidad()+" "+ " where codigo = "+det.getCodigoArticulo()
-				 * +"  and sucursal = '"+c.getSucursal()+"'"; Statement
-				 * statement2 = con.ObtenerConexion().createStatement();
-				 * statement2.execute(sql2); }
-				 */
-				String sql3 = "insert into factura_detalle(factura_id, codigo_articulo,cantidad, precio, iva, total, impuesto, tipo) "
-						+ "values ('" + c.getNumeroFactura() + "'," + det.getCodigoArticulo() + ", " + det.getCantidad()
-						+ "," + det.getPrecio() + "," + " " + det.getIva() + ", " + det.getTotal() + ", "
-						+ det.getImpuesto() + ", '" + det.getTipo() + "')";
-				Statement statement3 = con.ObtenerConexion().createStatement();
-				statement3.execute(sql3);
+				String sql2="insert into factura_detalle(factura_id, codigo_articulo, cantidad, precio, iva, total, impuesto, tipo)"
+						+ " values(?,?,?,?,?,?,?,?)";
+				PreparedStatement ps2= c.prepareStatement(sql2);
+				ps2.setString(1, fc.getNumeroFactura());
+				ps2.setLong(2, Long.parseLong(det.getCodigoArticulo()));
+				ps2.setLong(3, det.getCantidad());
+				ps2.setLong(4, det.getPrecio());
+				ps2.setLong(5, det.getIva());
+				ps2.setLong(6, det.getTotal());
+				ps2.setLong(7, det.getImpuesto());
+				ps2.setString(8, det.getTipo());
+				ps2.execute();
 			}
+			c.commit();
+			c.close();
 			return true;
 		} catch (Exception e) {
+			c.close();
 			System.out.println("ERROR: " + e.getMessage());
 			return false;
 		}

@@ -2,25 +2,24 @@ package com.panda.panda_sys.model.servicios;
 
 public class CircuitoServicioIngreso extends CircuitoServicio{
 
-	private Long cliente;
-	private Long encargado;
+	private String cliente;
+	private String encargado;
 	private String correo;
 	private String telefono;
 	private String detalleEquipo;
 	private String detalleTrabajo;
-	private String clienteNombreApellido;
-	private String encargadoNombreApellido;
-
-	public Long getCliente() {
+	private Long codigoPersona;
+	
+	public String getCliente() {
 		return cliente;
 	}
-	public void setCliente(Long cliente) {
+	public void setCliente(String cliente) {
 		this.cliente = cliente;
 	}
-	public Long getEncargado() {
+	public String getEncargado() {
 		return encargado;
 	}
-	public void setEncargado(Long encargado) {
+	public void setEncargado(String encargado) {
 		this.encargado = encargado;
 	}
 	public String getCorreo() {
@@ -47,17 +46,12 @@ public class CircuitoServicioIngreso extends CircuitoServicio{
 	public void setDetalleTrabajo(String detalleTrabajo) {
 		this.detalleTrabajo = detalleTrabajo;
 	}
-	public String getClienteNombreApellido() {
-		return clienteNombreApellido;
+	public Long getCodigoPersona() {
+		return codigoPersona;
 	}
-	public void setClienteNombreApellido(String clienteNombreApellido) {
-		this.clienteNombreApellido = clienteNombreApellido;
-	}
-	public String getEncargadoNombreApellido() {
-		return encargadoNombreApellido;
-	}
-	public void setEncargadoNombreApellido(String encargadoNombreApellido) {
-		this.encargadoNombreApellido = encargadoNombreApellido;
-	}
+	public void setCodigoPersona(Long codigoPersona) {
+		this.codigoPersona = codigoPersona;
+	}	
+
 	
 }

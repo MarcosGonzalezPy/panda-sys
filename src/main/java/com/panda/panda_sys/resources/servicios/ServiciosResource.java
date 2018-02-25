@@ -109,7 +109,7 @@ public class ServiciosResource {
 	@Path("/ingreso/{secuencia}")
 	public Response listarIngreso(@PathParam("secuencia")Long secuencia) throws JsonParseException, JsonMappingException, IOException, SQLException{
 		ServiciosService serviciosService = new ServiciosService();
-		CircuitoServicioIngreso entidad = serviciosService.obtenerIngreso(secuencia);
+		CircuitoServicioIngreso entidad = serviciosService.obtenerCircuitoServicioIngreso(secuencia);
 		Gson gson = new Gson();
 		String json = gson.toJson(entidad);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();		

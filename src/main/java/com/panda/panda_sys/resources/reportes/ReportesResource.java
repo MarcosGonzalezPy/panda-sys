@@ -1,5 +1,6 @@
 package com.panda.panda_sys.resources.reportes;
 
+import java.io.FileNotFoundException;
 import java.sql.SQLException;
 
 import javax.ws.rs.GET;
@@ -19,7 +20,7 @@ public class ReportesResource {
 	@GET
 	@Path("/prueba")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response acceder() throws SQLException, JRException {
+	public Response acceder() throws SQLException, JRException, FileNotFoundException {
 		ReportesService reportesService = new ReportesService();
 		byte[] respuesta =reportesService.exportar(null, null, null);
 		Gson gson = new Gson();
