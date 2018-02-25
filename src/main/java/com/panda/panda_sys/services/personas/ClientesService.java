@@ -35,7 +35,7 @@ public class ClientesService extends Conexion{
 				+ "'"+cliente.getRuc()+"',"
 				+ "'"+cliente.getSexo()+"',"
 				+ "'"+cliente.getTelefono()+"',"
-				+ "'"+cliente.getCelular1()+"',"
+				+ "'"+cliente.getCelularPrincipal()+"',"
 				+ "'ACTIVO');";
 		Statement statement = con.ObtenerConexion().createStatement();
 		statement.execute(sql);	
@@ -86,8 +86,8 @@ public class ClientesService extends Conexion{
         	entidad.setRuc(rs.getString("ruc"));
         	entidad.setSexo(rs.getString("sexo").trim());
         	entidad.setTelefono(rs.getString("telefono"));
-        	entidad.setCelular1(rs.getString("celular_principal"));
-        	entidad.setCelular2(rs.getString("celular_secundario"));
+        	entidad.setCelularPrincipal(rs.getString("celular_principal"));
+        	entidad.setCelularSecundario(rs.getString("celular_secundario"));
         	entidad.setEstado(rs.getString("estado"));
         	entidad.setRazonSocial(rs.getString("razon_social"));
         	entidad.setLimiteCredito(rs.getString("limite_credito"));

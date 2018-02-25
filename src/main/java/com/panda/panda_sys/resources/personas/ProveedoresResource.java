@@ -21,6 +21,7 @@ import com.panda.panda_sys.model.personas.Proveedores;
 import com.panda.panda_sys.services.personas.ProveedoresService;
 
 @Path("/personas/proveedores/")
+@Produces(MediaType.APPLICATION_JSON)
 public class ProveedoresResource {
 	
 	@GET

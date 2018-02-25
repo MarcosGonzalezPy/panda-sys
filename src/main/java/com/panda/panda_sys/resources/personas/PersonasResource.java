@@ -23,8 +23,7 @@ import com.panda.panda_sys.services.personas.PersonasService;
 @Path("/personas/personas")
 public class PersonasResource {
 	
-	@GET
-	@Path("/{paramjson}")
+	@GET 
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response listar(@PathParam("paramjson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException {
 		List<Personas> lista = new ArrayList<Personas>();
