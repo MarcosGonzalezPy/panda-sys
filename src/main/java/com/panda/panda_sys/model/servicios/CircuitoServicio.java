@@ -2,17 +2,18 @@ package com.panda.panda_sys.model.servicios;
 
 public class CircuitoServicio {
 	
-	private String secuencia;
+	private Long secuencia;
 	private String estado;
-	private String paso;
+	private Long paso;
 	private String lugar;
 	private String responsable;
 	private String fecha;
 	private String observacion;
-	public String getSecuencia() {
+	
+	public Long getSecuencia() {
 		return secuencia;
 	}
-	public void setSecuencia(String secuencia) {
+	public void setSecuencia(Long secuencia) {
 		this.secuencia = secuencia;
 	}
 	public String getEstado() {
@@ -21,10 +22,10 @@ public class CircuitoServicio {
 	public void setEstado(String estado) {
 		this.estado = estado;
 	}
-	public String getPaso() {
+	public Long getPaso() {
 		return paso;
 	}
-	public void setPaso(String paso) {
+	public void setPaso(Long paso) {
 		this.paso = paso;
 	}
 	public String getLugar() {

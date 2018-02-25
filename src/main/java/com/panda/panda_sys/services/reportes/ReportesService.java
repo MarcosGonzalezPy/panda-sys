@@ -1,6 +1,8 @@
 package com.panda.panda_sys.services.reportes;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -18,13 +20,17 @@ import net.sf.jasperreports.engine.export.JRXlsExporter;
 
 public class ReportesService extends Conexion {
 
-	public byte[] exportar(String idProceso, String codRechazo, String formato) throws JRException, SQLException {
+	public byte[] exportar(String idProceso, String codRechazo, String formato) throws JRException, SQLException, FileNotFoundException {
 		formato = "PDF";
 		Connection c = ObtenerConexion();
 
 		// obtenemos el reporte
+		ClassLoader clPrueba = ReportesService.class.getClassLoader();
+		System.out.println(""+clPrueba);
+		
 		ClassLoader cL = getClass().getClassLoader();
-		InputStream path = cL.getResourceAsStream("C:\\reporetes\\pagare.jasper");
+		InputStream path = new FileInputStream("c:/reportes/pagare.jasper");
+// cL.getResourceAsStream("	pagare.jasper");	
 		// InputStream logo =
 		// cL.getResourceAsStream("imagen/personal-logo.jpg");
 

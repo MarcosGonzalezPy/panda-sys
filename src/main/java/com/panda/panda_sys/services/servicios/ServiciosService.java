@@ -76,24 +76,25 @@ public class ServiciosService extends Conexion{
     		String sql = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha,observacion) "
     				+ "values (?,?,?,?,?,current_date,?);";	
     		PreparedStatement ps=c.prepareStatement(sql); 
-    		ps.setInt(1, Integer.parseInt(entidad.getSecuencia()));
+    		ps.setLong(1, entidad.getSecuencia());
     		ps.setString(2, entidad.getEstado());
-    		ps.setInt(3,  Integer.parseInt(entidad.getPaso()));
+    		ps.setLong(3, entidad.getPaso());
     		ps.setString(4, entidad.getLugar());
     		ps.setString(5, entidad.getResponsable());
     		ps.setString(6, entidad.getObservacion());
     		ps.execute();	
-    		String sql2= "insert into circuito_servicio_ingreso (secuencia, paso, cliente, correo, encargado,telefono, detalle_equipo, detalle_trabajo)"
-    				+ " values (?,?,?,?,?,?,?,?);";
+    		String sql2= "insert into circuito_servicio_ingreso (secuencia, paso, cliente, correo, encargado,telefono, detalle_equipo, detalle_trabajo, codigo_persona)"
+    				+ " values (?,?,?,?,?,?,?,?,?);";
     		PreparedStatement ps2 = c.prepareStatement(sql2);
-    		ps2.setInt(1, Integer.parseInt(entidad.getSecuencia()));
-    		ps2.setInt(2, Integer.parseInt(entidad.getPaso()));
-    		ps2.setLong(3, entidad.getCliente());
+    		ps2.setLong(1, entidad.getSecuencia());
+    		ps2.setLong(2, entidad.getPaso());
+    		ps2.setString(3, entidad.getCliente());
     		ps2.setString(4, entidad.getCorreo());
-    		ps2.setLong(5, entidad.getEncargado());
+    		ps2.setString(5, entidad.getEncargado().toUpperCase());
     		ps2.setString(6, entidad.getTelefono());
     		ps2.setString(7, entidad.getDetalleEquipo());
     		ps2.setString(8, entidad.getDetalleTrabajo());
+    		ps2.setLong(9, entidad.getCodigoPersona());
     		ps2.execute();
     		c.commit();
     		c.close();
@@ -134,9 +135,9 @@ public class ServiciosService extends Conexion{
 		rs = statement.executeQuery(sql);
         while(rs.next()){
         	CircuitoServicio entidad = new CircuitoServicio();
-        	entidad.setSecuencia(rs.getString("secuencia"));
+        	entidad.setSecuencia(rs.getLong("secuencia"));
         	entidad.setEstado(rs.getString("estado"));
-        	entidad.setPaso(rs.getString("paso"));
+        	entidad.setPaso(rs.getLong("paso"));
         	entidad.setLugar(rs.getString("lugar"));
         	entidad.setResponsable(rs.getString("responsable"));
         	entidad.setFecha(rs.getString("fecha"));    
@@ -146,6 +147,34 @@ public class ServiciosService extends Conexion{
 
 		return lista;
 	}
+    
+    public CircuitoServicioIngreso obtenerCircuitoServicioIngreso(Long secuencia) throws SQLException{
+    	CircuitoServicioIngreso entidad= new CircuitoServicioIngreso();
+    	Connection c= ObtenerConexion();
+    	try{    		
+			String sql = "select * from circuito_servicio_ingreso where paso =1 and secuencia =? ";
+			PreparedStatement ps=c.prepareStatement(sql);
+			ps.setLong(1, secuencia);
+			ResultSet rs= ps.executeQuery();
+			while(rs.next()){
+				entidad.setSecuencia(rs.getLong("secuencia"));
+				entidad.setPaso(rs.getLong("paso"));
+				entidad.setCliente(rs.getString("cliente"));
+				entidad.setCorreo(rs.getString("correo"));
+				entidad.setEncargado(rs.getString("encargado"));											
+				entidad.setTelefono(rs.getString("telefono"));
+    			entidad.setDetalleEquipo(rs.getString("detalle_equipo"));
+    			entidad.setDetalleTrabajo(rs.getString("detalle_trabajo"));
+    			entidad.setCodigoPersona(rs.getLong("codigo_persona"));	
+			}
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			System.out.println("Error: "+e.getMessage());
+			// TODO: handle exception
+		}
+    	return entidad;
+    }
     
     public boolean cotizacion(CircuitoServicioIngreso entidad) throws SQLException{
     	Statement statement = con.ObtenerConexion().createStatement();
@@ -170,36 +199,35 @@ public class ServiciosService extends Conexion{
 		
 	}
 
-    public CircuitoServicioIngreso obtenerIngreso(Long secuencia) throws SQLException{
-    	CircuitoServicioIngreso entidad = new CircuitoServicioIngreso();
-    	Connection c = ObtenerConexion();
-    	try {
-    		String sql = " select  cs.observacion, p.nombre ||' '||p.apellido \"cliente_nombre_apellido\","
-    				+ " pp.nombre ||' '||pp.apellido \"encargado_nombre_apellido\",c.* "
-    				+ " from personas p, circuito_servicio_ingreso c, personas pp, circuito_servicio cs "
-    				+ " where c.cliente = p.codigo  and c.encargado = pp.codigo "
-    				+ " and cs.secuencia = c.secuencia and c.secuencia = ? ";
-    		PreparedStatement ps =c.prepareStatement(sql);
-    		ps.setLong(1, secuencia);
-    		ResultSet rs = ps.executeQuery();
-    		while(rs.next()){
-    			entidad.setCliente(rs.getLong("cliente"));
-    			entidad.setClienteNombreApellido(rs.getString("cliente_nombre_apellido"));
-    			entidad.setEncargado(rs.getLong("encargado"));
-    			entidad.setEncargadoNombreApellido("encargado_nombre_apellido");
-    			entidad.setCorreo(rs.getString("correo"));
-    			entidad.setTelefono(rs.getString("telefono"));
-    			entidad.setDetalleEquipo(rs.getString("detalle_equipo"));
-    			entidad.setDetalleTrabajo(rs.getString("detalle_trabajo"));
-    			entidad.setObservacion(rs.getString("observacion"));
-    		}
-    		c.close();    		
-		} catch (Exception e) {
-			System.out.println("ERROR "+e.getMessage());
-			c.close();
-		}
-    	return entidad;
-    }
+//    public CircuitoServicioIngreso obtenerIngreso(Long secuencia) throws SQLException{
+//    	CircuitoServicioIngreso entidad = new CircuitoServicioIngreso();
+//    	Connection c = ObtenerConexion();
+//    	try {
+//    		String sql = " select  cs.observacion, p.nombre ||' '||p.apellido \"cliente_nombre_apellido\","
+//    				+ " pp.nombre ||' '||pp.apellido \"encargado_nombre_apellido\",c.* "
+//    				+ " from personas p, circuito_servicio_ingreso c, personas pp, circuito_servicio cs "
+//    				+ " where c.cliente = p.codigo  and c.encargado = pp.codigo "
+//    				+ " and cs.secuencia = c.secuencia and c.secuencia = ? ";
+//    		PreparedStatement ps =c.prepareStatement(sql);
+//    		ps.setLong(1, secuencia);
+//    		ResultSet rs = ps.executeQuery();
+//    		while(rs.next()){
+//    			entidad.setCliente(rs.getString("cliente"));
+//    			entidad.setCodigoPersona(rs.getLong("cliente_nombre_apellido"));
+//    			entidad.setEncargado(rs.getString("encargado"));
+//    			entidad.setCorreo(rs.getString("correo"));
+//    			entidad.setTelefono(rs.getString("telefono"));
+//    			entidad.setDetalleEquipo(rs.getString("detalle_equipo"));
+//    			entidad.setDetalleTrabajo(rs.getString("detalle_trabajo"));
+//    			entidad.setObservacion(rs.getString("observacion"));
+//    		}
+//    		c.close();    		
+//		} catch (Exception e) {
+//			System.out.println("ERROR "+e.getMessage());
+//			c.close();
+//		}
+//    	return entidad;
+//    }
     
 	public boolean insertarServicio(Servicios servicios) throws SQLException {
 		String sql = "insert into servicios ( codigo, descripcion, precio_unitario, grabado, estado) " + "values (('"
