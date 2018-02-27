@@ -54,7 +54,7 @@ public class ProveedoresService extends Conexion {
 		while (rs.next()) {
 			Proveedores entidad = new Proveedores();
 			entidad.setCodigo(rs.getString("codigo"));
-			entidad.setCedula(rs.getString("cedula"));
+			entidad.setCedula(rs.getInt("cedula"));
 			entidad.setNombre(rs.getString("nombre"));
 			entidad.setApellido(rs.getString("apellido"));
 			entidad.setFechaNacimiento(rs.getDate("fecha_nacimiento"));
