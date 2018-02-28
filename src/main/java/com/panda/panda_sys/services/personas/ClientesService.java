@@ -73,7 +73,7 @@ public class ClientesService extends Conexion{
         while(rs.next()){
         	Clientes entidad = new Clientes();
         	entidad.setCodigo(rs.getString("codigo"));
-        	entidad.setCedula(rs.getString("cedula"));
+        	entidad.setCedula(rs.getInt("cedula"));
         	entidad.setNombre(rs.getString("nombre"));
         	entidad.setApellido(rs.getString("apellido"));
         	entidad.setFechaNacimiento(rs.getDate("fecha_nacimiento"));

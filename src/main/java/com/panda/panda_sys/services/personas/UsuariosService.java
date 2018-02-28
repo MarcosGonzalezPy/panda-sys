@@ -135,7 +135,7 @@ public class UsuariosService extends Conexion{
         while(rs.next()){
         	Usuarios entidad = new Usuarios();
         	entidad.setCodigo(rs.getString("codigo"));
-        	entidad.setCedula(rs.getString("cedula"));
+        	entidad.setCedula(rs.getInt("cedula"));
         	entidad.setNombre(rs.getString("nombre"));
         	entidad.setApellido(rs.getString("apellido"));
         	entidad.setFechaNacimiento(rs.getDate("fecha_nacimiento"));
