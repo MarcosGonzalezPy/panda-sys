@@ -13,8 +13,11 @@ import java.util.Map;
 
 import com.panda.panda_sys.model.catalogo.Servicios;
 import com.panda.panda_sys.model.servicios.CircuitoServicio;
+import com.panda.panda_sys.model.servicios.CircuitoServicioCotizacion;
 import com.panda.panda_sys.model.servicios.CircuitoServicioIngreso;
+import com.panda.panda_sys.model.ventas.FacturaDetalle;
 import com.panda.panda_sys.util.Conexion;
+import com.panda.panda_sys.util.Secuencia;
 
 public class ServiciosService extends Conexion{
 	
@@ -73,8 +76,8 @@ public class ServiciosService extends Conexion{
     	Connection c = ObtenerConexion();
     	try {
     		c.setAutoCommit(false);
-    		String sql = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha,observacion) "
-    				+ "values (?,?,?,?,?,current_date,?);";	
+    		String sql = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha,observacion,es_ultimo) "
+    				+ "values (?,?,?,?,?,current_date,?,'S');";	
     		PreparedStatement ps=c.prepareStatement(sql); 
     		ps.setLong(1, entidad.getSecuencia());
     		ps.setString(2, entidad.getEstado());
@@ -109,7 +112,9 @@ public class ServiciosService extends Conexion{
 
     public List<CircuitoServicio> listarCircuito(CircuitoServicioIngreso circuitoServicioIngreso, String aux) throws SQLException{
 		List<CircuitoServicio> lista = new ArrayList<CircuitoServicio>();
-		String sql = "select cs.* from circuito_servicio cs, circuito_servicio_ingreso csi where cs.secuencia = csi.secuencia ";
+		String sql = "select cs.secuencia, cs.estado, cs.paso , cs.lugar, cs.responsable, cs.fecha, cs.observacion from  circuito_servicio cs, "
+			+ "circuito_servicio_ingreso csi where cs.secuencia = csi.secuencia"
+			+ " and cs.es_ultimo = 'S' ";
 		if(aux!= null && !aux.equals("")){
 			sql = sql +aux;
 		} 
@@ -132,6 +137,7 @@ public class ServiciosService extends Conexion{
 			sql = sql+conector + " upper(csi.cliente) like UPPER('%"+circuitoServicioIngreso.getCliente()+"%') ";
 		}
 		Statement statement = con.ObtenerConexion().createStatement();
+		sql +=" order by secuencia desc ";
 		rs = statement.executeQuery(sql);
         while(rs.next()){
         	CircuitoServicio entidad = new CircuitoServicio();
@@ -171,34 +177,11 @@ public class ServiciosService extends Conexion{
 		} catch (Exception e) {
 			c.close();
 			System.out.println("Error: "+e.getMessage());
-			// TODO: handle exception
 		}
     	return entidad;
     }
     
-    public boolean cotizacion(CircuitoServicioIngreso entidad) throws SQLException{
-    	Statement statement = con.ObtenerConexion().createStatement();
-    	try {    	
-    		String sql = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha,observacion) "
-    				+ "values ( "
-    				+ " "+entidad.getSecuencia()+" ,"
-    				+ " 'PENDIENTE_APROVACION',"
-    				+ " '"+entidad.getPaso()+"',"
-    				+ "'"+entidad.getLugar()+"',"
-    				+ "'"+entidad.getResponsable()+"',"
-    				+ "'"+new Date(System.currentTimeMillis())+"',"
-    				+ "'"+entidad.getObservacion()+"'"
-    				+ ");";
-    		
-    		statement.execute(sql);	
-	
-    		return true;
-		} catch (Exception e) {
-			return false;
-		}
-		
-	}
-
+    
 //    public CircuitoServicioIngreso obtenerIngreso(Long secuencia) throws SQLException{
 //    	CircuitoServicioIngreso entidad = new CircuitoServicioIngreso();
 //    	Connection c = ObtenerConexion();
@@ -267,6 +250,246 @@ public class ServiciosService extends Conexion{
 			c.close();
 			return false;
 		}
+	}
+	
+	
+	public Boolean crearCotizacion(CircuitoServicioCotizacion entidad) throws SQLException{
+		CircuitoServicio cs = entidad.getCircuitoServicio();
+		List<FacturaDetalle> fd = entidad.getListaDetalle();
+    	Connection c = ObtenerConexion();
+    	Long paso=0L;
+    	try {
+    		c.setAutoCommit(false);
+    		String sql0 = "select max(paso) from circuito_servicio where secuencia =? ";
+    		PreparedStatement ps0 =c.prepareStatement(sql0);
+    		ps0.setLong(1, cs.getSecuencia());
+    		ResultSet rs0 = ps0.executeQuery();
+    		while(rs0.next()){
+    			paso= rs0.getLong("max")+1;
+    		}
+    		
+    		
+    		String sql = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha,observacion,es_ultimo) "
+    				+ "values (?,?,?,?,?,current_date,?, 'S');";	
+    		PreparedStatement ps=c.prepareStatement(sql); 
+    		ps.setLong(1, cs.getSecuencia());
+    		ps.setString(2,"COTIZADO");
+    		ps.setLong(3, paso);
+    		ps.setString(4, cs.getLugar());
+    		ps.setString(5, cs.getResponsable());
+    		ps.setString(6, cs.getObservacion());
+    		ps.execute();
+    		
+    		Secuencia secuencia = new Secuencia();
+    		String numeroFactura = secuencia.getSecuencia("factura_seq");
+    		String sql2 = "insert into circuito_servicio_cotizacion (secuencia,paso,numero_factura) values(?,?,?)";
+    		PreparedStatement ps2 = c.prepareStatement(sql2);
+    		ps2.setLong(1, cs.getSecuencia());
+    		ps2.setLong(2,paso);
+    		ps2.setString(3,numeroFactura);
+    		ps2.execute();
+    		
+    		String sql3 = "insert into factura_detalle (factura_id, codigo_articulo, cantidad, precio, iva, total, impuesto, tipo, estado) values (?,?,?,?,?,?,?,?,?)";
+    		for(FacturaDetalle det: fd){
+    			PreparedStatement ps3 =c.prepareStatement(sql3);
+    			ps3.setString(1, numeroFactura);
+    			ps3.setInt(2, Integer.parseInt(det.getCodigoArticulo()));
+    			ps3.setLong(3, det.getCantidad());
+    			ps3.setLong(4, det.getPrecio());
+    			ps3.setLong(5, det.getIva());
+    			ps3.setLong(6, det.getTotal());
+    			ps3.setLong(7, det.getImpuesto());
+    			ps3.setString(8, det.getTipo());
+    			ps3.setString(9, "PENDIENTE");
+    			ps3.execute();
+    		}
+    		
+    		String sql4 ="update circuito_servicio set es_ultimo = 'N' where paso=? and secuencia =?";
+    		PreparedStatement ps4 = c.prepareStatement(sql4);
+    		ps4.setLong(1, paso-1);
+    		ps4.setLong(2, cs.getSecuencia());
+    		ps4.execute();
+    		c.commit();
+    		c.close();
+    		return true;
+    	}catch(Exception e){
+			c.close();
+			return false;
+		}
+	}
+	
+	public Boolean aprobar(CircuitoServicio cs) throws SQLException{
+		Long secuencia = cs.getSecuencia();
+		Connection c = ObtenerConexion();
+		Long paso=0L;
+		String numeroFactura = "";
+		try {
+			c.setAutoCommit(false);
+    		String sql0 = "select max(paso) from circuito_servicio where secuencia =? ";
+    		PreparedStatement ps0 =c.prepareStatement(sql0);
+    		ps0.setLong(1, secuencia);
+    		ResultSet rs0 = ps0.executeQuery();
+    		while(rs0.next()){
+    			paso= rs0.getLong("max")+1;
+    		}
+    		
+    		String sql = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha, es_ultimo) "
+    				+ "values (?,?,?,?,?,current_date, 'S');";	
+    		PreparedStatement ps=c.prepareStatement(sql); 
+    		ps.setLong(1, secuencia);
+    		ps.setString(2,"APROBADO");
+    		ps.setLong(3, paso);
+    		ps.setString(4, cs.getLugar());
+    		ps.setString(5, cs.getResponsable());
+    		ps.execute();
+    		
+    		String sql3 = "select * from circuito_servicio_cotizacion where secuencia =? ";
+    		PreparedStatement ps3 =c.prepareStatement(sql3);
+    		ps3.setLong(1,secuencia);
+    		ResultSet rs3 = ps3.executeQuery();
+    		while(rs3.next()){
+    			numeroFactura=rs3.getString("numero_factura");
+    		}
+    		
+    		String sql2 = "update factura_detalle set estado = 'APROBADO' where factura_id = ? ";
+    		PreparedStatement ps2=c.prepareStatement(sql2);
+    		ps2.setString(1,numeroFactura);
+    		ps2.execute();
+    		
+
+    		String sql4 ="update circuito_servicio set es_ultimo = 'N' where paso=? and secuencia =?";
+    		PreparedStatement ps4 = c.prepareStatement(sql4);
+    		ps4.setLong(1, paso-1);
+    		ps4.setLong(2, cs.getSecuencia());
+    		ps4.execute();
+			c.commit();			
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
+		return true;
+	}
+	
+	public Boolean reparar(CircuitoServicio cs) throws SQLException{
+		Long secuencia = cs.getSecuencia();
+		Connection c = ObtenerConexion();
+		Long paso=0L;
+		String numeroFactura = "";
+		try {
+			c.setAutoCommit(false);
+    		String sql0 = "select max(paso) from circuito_servicio where secuencia =? ";
+    		PreparedStatement ps0 =c.prepareStatement(sql0);
+    		ps0.setLong(1, secuencia);
+    		ResultSet rs0 = ps0.executeQuery();
+    		while(rs0.next()){
+    			paso= rs0.getLong("max")+1;
+    		}
+    		
+    		String sql = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha, es_ultimo) "
+    				+ "values (?,?,?,?,?,current_date, 'S');";	
+    		PreparedStatement ps=c.prepareStatement(sql); 
+    		ps.setLong(1, secuencia);
+    		ps.setString(2,"REPARADO");
+    		ps.setLong(3, paso);
+    		ps.setString(4, cs.getLugar());
+    		ps.setString(5, cs.getResponsable());
+    		ps.execute();
+    		
+    		String sql3 = "select * from circuito_servicio_cotizacion where secuencia =? ";
+    		PreparedStatement ps3 =c.prepareStatement(sql3);
+    		ps3.setLong(1,secuencia);
+    		ResultSet rs3 = ps3.executeQuery();
+    		while(rs3.next()){
+    			numeroFactura=rs3.getString("numero_factura");
+    		}
+    		
+    		String sql2 = "update factura_detalle set estado = 'REPARADO' where factura_id = ? ";
+    		PreparedStatement ps2=c.prepareStatement(sql2);
+    		ps2.setString(1,numeroFactura);
+    		ps2.execute();
+    		
+
+    		String sql4 ="update circuito_servicio set es_ultimo = 'N' where paso=? and secuencia =?";
+    		PreparedStatement ps4 = c.prepareStatement(sql4);
+    		ps4.setLong(1, paso-1);
+    		ps4.setLong(2, cs.getSecuencia());
+    		ps4.execute();
+			c.commit();			
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
+		return true;
+	}
+	
+	public Boolean rechazar(CircuitoServicio cs) throws SQLException{
+		Long secuencia = cs.getSecuencia();
+		Connection c = ObtenerConexion();
+		Long paso=0L;
+		String numeroFactura = "";
+		try {
+			c.setAutoCommit(false);
+    		String sql0 = "select max(paso) from circuito_servicio where secuencia =? ";
+    		PreparedStatement ps0 =c.prepareStatement(sql0);
+    		ps0.setLong(1, secuencia);
+    		ResultSet rs0 = ps0.executeQuery();
+    		while(rs0.next()){
+    			paso= rs0.getLong("max")+1;
+    		}
+    		
+    		String sql = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha, es_ultimo) "
+    				+ "values (?,?,?,?,?,current_date, 'S');";	
+    		PreparedStatement ps=c.prepareStatement(sql); 
+    		ps.setLong(1, secuencia);
+    		ps.setString(2,"RECHAZADO");
+    		ps.setLong(3, paso);
+    		ps.setString(4, cs.getLugar());
+    		ps.setString(5, cs.getResponsable());
+    		ps.execute();
+    		
+    		String sql3 = "select * from circuito_servicio_cotizacion where secuencia =? ";
+    		PreparedStatement ps3 =c.prepareStatement(sql3);
+    		ps3.setLong(1,secuencia);
+    		ResultSet rs3 = ps3.executeQuery();
+    		while(rs3.next()){
+    			numeroFactura=rs3.getString("numero_factura");
+    		}
+    		
+    		String sql2 = "update factura_detalle set estado = 'RECHAZADO' where factura_id = ? ";
+    		PreparedStatement ps2=c.prepareStatement(sql2);
+    		ps2.setString(1,numeroFactura);
+    		ps2.execute();
+    		
+
+    		String sql4 ="update circuito_servicio set es_ultimo = 'N' where paso=? and secuencia =?";
+    		PreparedStatement ps4 = c.prepareStatement(sql4);
+    		ps4.setLong(1, paso-1);
+    		ps4.setLong(2, cs.getSecuencia());
+    		ps4.execute();
+			c.commit();			
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
+		return true;
+	}
+
+	
+	public Boolean anularCircuito(Long secuencia) throws SQLException{
+		Connection c= ObtenerConexion();
+		try {
+			c.setAutoCommit(false);
+			//TODO
+			c.commit();
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			System.out.println("Error al anular el servicio: "+e.getMessage());
+		}
+		return true;
 	}
 
 }

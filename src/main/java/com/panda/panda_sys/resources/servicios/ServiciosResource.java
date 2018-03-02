@@ -24,16 +24,17 @@ import com.google.gson.Gson;
 import com.panda.panda_sys.model.catalogo.Servicios;
 import com.panda.panda_sys.model.personas.Clientes;
 import com.panda.panda_sys.model.servicios.CircuitoServicio;
+import com.panda.panda_sys.model.servicios.CircuitoServicioCotizacion;
 import com.panda.panda_sys.model.servicios.CircuitoServicioIngreso;
 import com.panda.panda_sys.services.personas.ClientesService;
 import com.panda.panda_sys.services.servicios.ServiciosService;
 
-@Path("/servicios")
+@Path("/servicios/")
 @Produces(MediaType.APPLICATION_JSON)
 public class ServiciosResource {
 	
 	@GET
-	@Path("/secuencia")
+	@Path("secuencia")
 	public Response secuencia() throws SQLException{
 		ServiciosService serviciosService = new ServiciosService();
 		String secuencia = serviciosService.getSecuencia();
@@ -41,7 +42,7 @@ public class ServiciosResource {
 	}
 	
 	@POST
-	@Path("/ingresar-equipo")
+	@Path("ingresar-equipo")
 	public Response ingresarEquipo(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, IOException {
 		Boolean respuesta = null;
 		ServiciosService serviciosService = new ServiciosService();
@@ -59,7 +60,7 @@ public class ServiciosResource {
 	}
 	
 	@GET
-	@Path("/circuito")
+	@Path("circuito")
 	public Response listarCircuito(@QueryParam("paramJson") String paramJson) throws JsonParseException, JsonMappingException, IOException, SQLException{
 		ServiciosService serviciosService = new ServiciosService();
 		CircuitoServicioIngreso entidad = new CircuitoServicioIngreso();
@@ -74,7 +75,7 @@ public class ServiciosResource {
 	}
 	
 	@GET
-	@Path("/listar-servicio")
+	@Path("listar-servicio")
 	public Response listarServicio(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, IOException {
 		ServiciosService serviciosService = new ServiciosService();
 		Servicios servicios = new Servicios();
@@ -90,7 +91,7 @@ public class ServiciosResource {
 	}
 	
 	@GET
-	@Path("/cotizacion")
+	@Path("cotizacion")
 	public Response listarCotizacion(@QueryParam("paramJson") String paramJson) throws JsonParseException, JsonMappingException, IOException, SQLException{
 		ServiciosService serviciosService = new ServiciosService();
 		CircuitoServicioIngreso entidad = new CircuitoServicioIngreso();
@@ -106,7 +107,7 @@ public class ServiciosResource {
 	}
 	
 	@GET
-	@Path("/ingreso/{secuencia}")
+	@Path("ingreso/{secuencia}")
 	public Response listarIngreso(@PathParam("secuencia")Long secuencia) throws JsonParseException, JsonMappingException, IOException, SQLException{
 		ServiciosService serviciosService = new ServiciosService();
 		CircuitoServicioIngreso entidad = serviciosService.obtenerCircuitoServicioIngreso(secuencia);
@@ -117,7 +118,7 @@ public class ServiciosResource {
 	
 
 	@GET
-	@Path("/insertar-servicios")
+	@Path("insertar-servicios")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response insertar(@QueryParam("paramJson") String paramJson)
 			throws SQLException, JsonParseException, IOException {
@@ -134,7 +135,7 @@ public class ServiciosResource {
 	}
 
 	@GET
-	@Path("/eliminar-id/{codigo}")
+	@Path("eliminar-id/{codigo}")
 
 	public Response eliminarById(@PathParam("codigo") Integer codigo) throws SQLException {
 		ServiciosService serviciosService = new ServiciosService();
@@ -145,7 +146,7 @@ public class ServiciosResource {
 	}
 	
 	@POST
-	@Path("/modificar")
+	@Path("modificar")
 	public Response editarServicios(@QueryParam("paramJson") String paramJson)
 			throws JsonParseException, JsonMappingException, IOException, SQLException{
 		Boolean respuesta = null;
@@ -162,5 +163,74 @@ public class ServiciosResource {
 				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
 				.build();		
 	}
+	
+	@POST
+	@Path("crear-cotizacion")
+	public Response crearCotizacion(@QueryParam("paramJson") String paramJson) throws JsonParseException, JsonMappingException, IOException, SQLException{
+		CircuitoServicioCotizacion entidad = new CircuitoServicioCotizacion();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			entidad = mapper.readValue(paramJson, CircuitoServicioCotizacion.class);
+		}	
+		ServiciosService serviciosService = new ServiciosService();
+		Boolean respuesta = serviciosService.crearCotizacion(entidad);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();		
+	}
+	
+	@POST
+	@Path("aprobar")
+	public Response aprobar(@QueryParam("paramJson") String paramJson) throws JsonParseException, JsonMappingException, IOException, SQLException{
+		CircuitoServicio entidad = new CircuitoServicio();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			entidad = mapper.readValue(paramJson, CircuitoServicio.class);
+		}	
+		ServiciosService serviciosService = new ServiciosService();
+		Boolean respuesta = serviciosService.aprobar(entidad);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();	
+	}
+	
+	@POST
+	@Path("reparar")
+	public Response reparar(@QueryParam("paramJson") String paramJson) throws JsonParseException, JsonMappingException, IOException, SQLException{
+		CircuitoServicio entidad = new CircuitoServicio();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			entidad = mapper.readValue(paramJson, CircuitoServicio.class);
+		}	
+		ServiciosService serviciosService = new ServiciosService();
+		Boolean respuesta = serviciosService.reparar(entidad);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();	
+	}
+	
+	@POST
+	@Path("rechazar")
+	public Response rechazar(@QueryParam("paramJson") String paramJson) throws JsonParseException, JsonMappingException, IOException, SQLException{
+		CircuitoServicio entidad = new CircuitoServicio();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			entidad = mapper.readValue(paramJson, CircuitoServicio.class);
+		}	
+		ServiciosService serviciosService = new ServiciosService();
+		Boolean respuesta = serviciosService.rechazar(entidad);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();	
+	}
+	
 
 }

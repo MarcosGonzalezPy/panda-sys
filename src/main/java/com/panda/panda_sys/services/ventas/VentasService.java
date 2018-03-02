@@ -441,6 +441,5 @@ public class VentasService extends Conexion {
 			return false;
 		}		
 	}
-	
 
 }
