@@ -1,13 +1,12 @@
 package com.panda.panda_sys.model.personas;
 
-public class Proveedores extends Personas{
-	
+public class Proveedores extends Personas { 
 	private String representanteNombre;
 	private String representanteTelefono;
 	private String representanteCelular;
 	private String paginaWeb;
 	private String obs;
-	
+	 
 	public String getRepresentanteNombre() {
 		return representanteNombre;
 	}
@@ -38,6 +37,5 @@ public class Proveedores extends Personas{
 	public void setObs(String obs) {
 		this.obs = obs;
 	}
-
-
+	
 }
