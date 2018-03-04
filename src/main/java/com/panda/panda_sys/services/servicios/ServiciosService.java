@@ -77,7 +77,7 @@ public class ServiciosService extends Conexion{
     	try {
     		c.setAutoCommit(false);
     		String sql = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha,observacion,es_ultimo) "
-    				+ "values (?,?,?,?,?,current_date,?,'S');";	
+    				+ "values (?,?,?,?,?,CURRENT_TIMESTAMP,?,'S');";	
     		PreparedStatement ps=c.prepareStatement(sql); 
     		ps.setLong(1, entidad.getSecuencia());
     		ps.setString(2, entidad.getEstado());
@@ -150,7 +150,12 @@ public class ServiciosService extends Conexion{
         	entidad.setPaso(rs.getLong("paso"));
         	entidad.setLugar(rs.getString("lugar"));
         	entidad.setResponsable(rs.getString("responsable"));
-        	entidad.setFecha(rs.getString("fecha"));    
+        	Integer maxLeng= rs.getString("fecha").length();
+        	if(maxLeng>19){
+        		maxLeng = 19;
+        	}		
+        	String fecha = rs.getString("fecha").substring(0, maxLeng);
+        	entidad.setFecha(fecha);    
         	entidad.setObservacion(rs.getString("observacion"));
         	lista.add(entidad);
         }
