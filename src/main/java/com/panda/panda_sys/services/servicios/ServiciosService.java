@@ -86,8 +86,9 @@ public class ServiciosService extends Conexion{
     		ps.setString(5, entidad.getResponsable());
     		ps.setString(6, entidad.getObservacion());
     		ps.execute();	
-    		String sql2= "insert into circuito_servicio_ingreso (secuencia, paso, cliente, correo, encargado,telefono, detalle_equipo, detalle_trabajo, codigo_persona)"
-    				+ " values (?,?,?,?,?,?,?,?,?);";
+    		String sql2= "insert into circuito_servicio_ingreso (secuencia, paso, cliente, correo, encargado,telefono, detalle_equipo, detalle_trabajo, "
+    				+ "codigo_persona, tipo, marca, modelo)"
+    				+ " values (?,?,?,?,?,?,?,?,?,?,?,?);";
     		PreparedStatement ps2 = c.prepareStatement(sql2);
     		ps2.setLong(1, entidad.getSecuencia());
     		ps2.setLong(2, entidad.getPaso());
@@ -98,6 +99,9 @@ public class ServiciosService extends Conexion{
     		ps2.setString(7, entidad.getDetalleEquipo());
     		ps2.setString(8, entidad.getDetalleTrabajo());
     		ps2.setLong(9, entidad.getCodigoPersona());
+    		ps2.setString(10, entidad.getTipo());
+    		ps2.setString(11, entidad.getMarca());
+    		ps2.setString(12, entidad.getModelo());
     		ps2.execute();
     		c.commit();
     		c.close();
@@ -171,7 +175,10 @@ public class ServiciosService extends Conexion{
 				entidad.setTelefono(rs.getString("telefono"));
     			entidad.setDetalleEquipo(rs.getString("detalle_equipo"));
     			entidad.setDetalleTrabajo(rs.getString("detalle_trabajo"));
-    			entidad.setCodigoPersona(rs.getLong("codigo_persona"));	
+    			entidad.setCodigoPersona(rs.getLong("codigo_persona"));
+    			entidad.setTipo(rs.getString("tipo"));
+    			entidad.setMarca(rs.getString("marca"));
+    			entidad.setModelo(rs.getString("modelo"));
 			}
 			c.close();
 		} catch (Exception e) {
@@ -477,19 +484,89 @@ public class ServiciosService extends Conexion{
 		return true;
 	}
 
-	
-	public Boolean anularCircuito(Long secuencia) throws SQLException{
-		Connection c= ObtenerConexion();
+	public Boolean anular(CircuitoServicio cs) throws SQLException{
+		Long secuencia = cs.getSecuencia();
+		Connection c = ObtenerConexion();
 		try {
 			c.setAutoCommit(false);
-			//TODO
+			Long paso= null;
+			String sql0 = "select max(paso) from circuito_servicio where secuencia =? ";
+    		PreparedStatement ps0 =c.prepareStatement(sql0);
+    		ps0.setLong(1, secuencia);
+    		ResultSet rs0 = ps0.executeQuery();
+    		while(rs0.next()){
+    			paso= rs0.getLong("max")+1;
+    		}
+			String sql1 = "select * from circuito_servicio_cotizacion where secuencia = ?";
+			PreparedStatement ps1 = c.prepareStatement(sql1);
+			ps1.setLong(1, secuencia);
+			ResultSet rs = ps1.executeQuery();
+			String numeroFactura = null;
+			while(rs.next()){
+				numeroFactura= rs.getString("numero_factura");
+			}
+			if(numeroFactura!=null){
+				String sql2 = "update factura_detalle set estado='ANULADO' where numero_factura=? ";
+				PreparedStatement ps2 = c.prepareStatement(sql2);
+				ps2.setString(1, numeroFactura);
+			}
+			
+//			String sql3 = "update circuito_servicio_ingreso  set estado='ANULADO' where secuencia = ? ";
+//			PreparedStatement ps3 = c.prepareStatement(sql3);
+//			ps3.setLong(1, secuencia);
+//			ps3.execute();
+			
+    		String sql4 = "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha, es_ultimo) "
+    				+ "values (?,?,?,?,?,current_date, 'S');";	
+    		PreparedStatement ps4=c.prepareStatement(sql4); 
+    		ps4.setLong(1, secuencia);
+    		ps4.setString(2,"ANULADO");
+    		ps4.setLong(3, paso);
+    		ps4.setString(4, cs.getLugar());
+    		ps4.setString(5, cs.getResponsable());
+    		ps4.execute();
+    		
+    		String sql5 ="update circuito_servicio set es_ultimo = 'N' where paso=? and secuencia =?";
+    		PreparedStatement ps5 = c.prepareStatement(sql5);
+    		ps5.setLong(1, paso-1);
+    		ps5.setLong(2, cs.getSecuencia());
+    		ps5.execute();
+    		
 			c.commit();
 			c.close();
 		} catch (Exception e) {
 			c.close();
 			System.out.println("Error al anular el servicio: "+e.getMessage());
+			return false;
 		}
 		return true;
+	}
+	
+	public List<CircuitoServicio> circuitoServicioHistorico(Long secuencia) throws SQLException{
+		Connection c = ObtenerConexion();
+		List<CircuitoServicio> lista = new ArrayList<CircuitoServicio>();
+		try {
+			String sql = "select * from circuito_servicio where secuencia = ? order by paso";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setLong(1, secuencia);
+			ResultSet rs= ps.executeQuery();
+			 while(rs.next()){
+		        	CircuitoServicio entidad = new CircuitoServicio();
+		        	entidad.setSecuencia(rs.getLong("secuencia"));
+		        	entidad.setEstado(rs.getString("estado"));
+		        	entidad.setPaso(rs.getLong("paso"));
+		        	entidad.setLugar(rs.getString("lugar"));
+		        	entidad.setResponsable(rs.getString("responsable"));
+		        	entidad.setFecha(rs.getString("fecha"));    
+		        	entidad.setObservacion(rs.getString("observacion"));
+		        	lista.add(entidad);
+		        }
+			 c.close();
+		} catch (Exception e) {
+			System.out.println("Error "+e.getMessage());
+			c.close();
+		}
+		return lista;
 	}
 
 }

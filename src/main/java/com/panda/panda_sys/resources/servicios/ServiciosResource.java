@@ -232,5 +232,33 @@ public class ServiciosResource {
 				.build();	
 	}
 	
+	@POST
+	@Path("anular-circuito")
+	public Response eliminarCircuito(@QueryParam("paramJson") String paramJson) throws JsonParseException, JsonMappingException, IOException, SQLException{	
+		CircuitoServicio entidad = new CircuitoServicio();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			entidad = mapper.readValue(paramJson, CircuitoServicio.class);
+		}	
+		ServiciosService serviciosService = new ServiciosService();
+		Boolean respuesta = serviciosService.anular(entidad);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();	
+	}
+	
+	
+	@GET
+	@Path("circuito-historico/{secuencia}")
+	public Response listarCircuitoHistorico(@PathParam("secuencia") Long secuencia) throws JsonParseException, JsonMappingException, IOException, SQLException{
+		ServiciosService serviciosService = new ServiciosService();
+		List<CircuitoServicio> lista = serviciosService.circuitoServicioHistorico(secuencia);
+		Gson gson = new Gson();
+		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();		
+	}
+	
 
 }
