@@ -128,7 +128,7 @@ public class ProveedoresService extends Conexion {
 
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setString(1, proveedores.getRepresentanteNombre());
-			ps.setString(2, proveedores.getTelefono());
+			ps.setString(2, proveedores.getRepresentanteTelefono());
 			ps.setString(3, proveedores.getRepresentanteCelular());
 			ps.setString(4, proveedores.getPaginaWeb());
 			ps.setString(5, proveedores.getObs());

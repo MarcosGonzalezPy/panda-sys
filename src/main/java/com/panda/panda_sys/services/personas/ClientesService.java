@@ -1,6 +1,6 @@
 package com.panda.panda_sys.services.personas;
 
-import java.sql.Connection;
+import java.sql.Connection; 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -60,11 +60,16 @@ public class ClientesService extends Conexion {
 		String sql = " select * from clientes c, personas p where c.codigo = p.codigo ";
 		if (complexQuery) {
 			if (clientes.getNombre() != null) {
-				sql = sql + " and (upper(nombre) || upper(apellido)  like '%" + clientes.getNombre() + "%' )";
+				sql = sql + " and " + " (p.nombre like  upper('%" + clientes.getNombre() + "%')  or  apellido like  upper('%" + clientes.getNombre() + "%') )";
 			}
 			if (clientes.getRuc() != null) {
-				sql = sql + " and  (p.ruc = '" + clientes.getRuc() + "' or cedula = '" + clientes.getRuc() + "') ";
-			}
+				sql = sql + " and " + " (p.ruc = '" + clientes.getRuc() +  "' ";
+				if(!clientes.getRuc().contains("-")){
+					sql+=" or p.cedula = '" + clientes.getRuc() +"' ";
+				}
+				sql+=")";
+			} 
+			
 		} else {
 			if (clientes.getNombre() != null) {
 				sql = sql + "and  p.nombre like '%" + clientes.getNombre() + "%'  ";
@@ -78,8 +83,7 @@ public class ClientesService extends Conexion {
 		}
 		if (clientes.getApellido() != null) {
 			sql = sql + " p.apellido like '%" + clientes.getApellido() + "%' ";
-		}
-
+		} 
 		Statement statement = con.ObtenerConexion().createStatement();
 		rs = statement.executeQuery(sql);
 		while (rs.next()) {
