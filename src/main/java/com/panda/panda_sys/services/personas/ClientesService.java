@@ -1,6 +1,6 @@
 package com.panda.panda_sys.services.personas;
 
-import java.sql.Connection; 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,17 +32,16 @@ public class ClientesService extends Conexion {
 		statement.execute(sql);
 		return true;
 	}
-	
+
 	public boolean insertarClientes(Clientes clientes) throws SQLException {
 		Connection c = ObtenerConexion();
 		try {
 			c.setAutoCommit(false);
-			String sql = "insert into clientes (codigo,razon_social,limite_credito) "
-					+ "values (?,UPPER(?),?);";
+			String sql = "insert into clientes (codigo,razon_social,limite_credito) " + "values (?,UPPER(?),?);";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setInt(1, Integer.parseInt(clientes.getCodigo()));
 			ps.setString(2, clientes.getRazonSocial());
-			ps.setString(3, clientes.getLimiteCredito()); 
+			ps.setInt(3, Integer.parseInt(clientes.getLimiteCredito()));
 			ps.execute();
 
 			c.commit();
@@ -57,33 +56,32 @@ public class ClientesService extends Conexion {
 
 	public List<Clientes> listar(Clientes clientes, boolean complexQuery) throws SQLException {
 		List<Clientes> lista = new ArrayList<Clientes>();
-		String sql = " select * from clientes c, personas p where c.codigo = p.codigo ";
+		String sql = " select * from personas p, clientes c  " + " where p.codigo = c.codigo ";
 		if (complexQuery) {
 			if (clientes.getNombre() != null) {
-				sql = sql + " and " + " (p.nombre like  upper('%" + clientes.getNombre() + "%')  or  apellido like  upper('%" + clientes.getNombre() + "%') )";
+				sql = sql + " and " + " (p.nombre like  upper('%" + clientes.getNombre()
+						+ "%')  or apellido like  upper('%" + clientes.getNombre() + "%') )";
 			}
 			if (clientes.getRuc() != null) {
-				sql = sql + " and " + " (p.ruc = '" + clientes.getRuc() +  "' ";
-				if(!clientes.getRuc().contains("-")){
-					sql+=" or p.cedula = '" + clientes.getRuc() +"' ";
+				sql = sql + " and " + " (p.ruc = '" + clientes.getRuc() + "' ";
+				if (!clientes.getRuc().contains("-")) {
+					sql += " or cedula = '" + clientes.getRuc() + "' ";
 				}
-				sql+=")";
-			} 
-			
+				sql += ")";
+			}
+
 		} else {
-			if (clientes.getNombre() != null) {
-				sql = sql + "and  p.nombre like '%" + clientes.getNombre() + "%'  ";
-			}
-			if (clientes.getRuc() != null) {
-				sql = sql + " p.ruc = '" + clientes.getRuc() + "' ";
-			}
+			sql = sql + " and " + " p.nombre like  upper('%" + clientes.getNombre() + "%' ) ";
 		}
+
 		if (clientes.getCodigo() != null) {
-			sql = sql + " and  p.codigo = '" + clientes.getCodigo() + "' ";
+			sql = sql + " and " + " p.codigo = '" + clientes.getCodigo() + "' ";
 		}
+
 		if (clientes.getApellido() != null) {
-			sql = sql + " p.apellido like '%" + clientes.getApellido() + "%' ";
-		} 
+			sql = sql + " and " + " p.apellido like '%" + clientes.getApellido() + "%' ";
+		}
+
 		Statement statement = con.ObtenerConexion().createStatement();
 		rs = statement.executeQuery(sql);
 		while (rs.next()) {
@@ -155,6 +153,31 @@ public class ClientesService extends Conexion {
 		}
 
 		return lista;
+	}
+
+	public boolean modificar(Clientes clientes) throws SQLException {
+		Connection c = ObtenerConexion();
+		try {
+			String sql = "update clientes set " + "cedula= ?,  nombre=UPPER( ? )" + "where codigo = ?";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, clientes.getRazonSocial());
+			ps.setInt(2, Integer.parseInt(clientes.getLimiteCredito()));
+			ps.setInt(3, Integer.parseInt(clientes.getCodigo()));
+			ps.execute();
+
+			c.close();
+			return true;
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
+	}
+	
+	public boolean eliminar(Integer codigo) throws SQLException {
+		String sql = "delete from clientes where codigo = '" + codigo + "'  ";
+		Statement stmt = con.ObtenerConexion().createStatement();
+		stmt.execute(sql);
+		return true;
 	}
 
 }
