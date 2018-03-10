@@ -11,6 +11,14 @@ public class FacturaDetalle {
 	private Integer total;
 	private Integer impuesto;
 	private String tipo;
+	private String estado;
+	
+	public String getEstado() {
+		return estado;
+	}
+	public void setEstado(String estado) {
+		this.estado = estado;
+	}
 	
 	public String getDescripcion() {
 		return descripcion;
