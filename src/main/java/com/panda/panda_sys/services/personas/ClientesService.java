@@ -31,7 +31,7 @@ public class ClientesService extends Conexion {
 		Statement statement = con.ObtenerConexion().createStatement();
 		statement.execute(sql);
 		return true;
-	}
+	} 
 
 	public boolean insertarClientes(Clientes clientes) throws SQLException {
 		Connection c = ObtenerConexion();
@@ -158,7 +158,7 @@ public class ClientesService extends Conexion {
 	public boolean modificar(Clientes clientes) throws SQLException {
 		Connection c = ObtenerConexion();
 		try {
-			String sql = "update clientes set " + "cedula= ?,  nombre=UPPER( ? )" + "where codigo = ?";
+			String sql = "update clientes set " + "razon_social= UPPER(?),  limite_credito= ?" + "where codigo = ?";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setString(1, clientes.getRazonSocial());
 			ps.setInt(2, Integer.parseInt(clientes.getLimiteCredito()));

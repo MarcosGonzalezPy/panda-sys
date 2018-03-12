@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -18,7 +19,9 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
+import com.panda.panda_sys.model.personas.Clientes;
 import com.panda.panda_sys.model.personas.UsuarioSucursal;
+import com.panda.panda_sys.services.personas.ClientesService;
 import com.panda.panda_sys.services.personas.UsuarioSucursalService;
 import com.panda.panda_sys.services.personas.UsuariosService;
 
@@ -35,8 +38,8 @@ public class UsuarioSucursalResource {
 			ObjectMapper mapper = new ObjectMapper();
 			valor = mapper.readValue(paramJson, UsuarioSucursal.class);
 		}
-		UsuariosService usuariosService = new UsuariosService();
-		lista = usuariosService.listarUsuarioSucursal(valor);
+		UsuarioSucursalService usuariosSucursalService = new UsuarioSucursalService();
+		lista = usuariosSucursalService.listarUsuarioSucursal(valor);
 		Gson gson = new Gson();
 		String json = gson.toJson(lista);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
@@ -62,6 +65,24 @@ public class UsuarioSucursalResource {
 		Gson gson = new Gson();
 		String json = gson.toJson(result);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@POST
+	@Path("/modificar")
+	public Response editar(@QueryParam("paramJson") String paramJson)
+			throws JsonParseException, JsonMappingException, IOException, SQLException {
+		Boolean respuesta = null;
+		UsuarioSucursal pojo = new UsuarioSucursal();
+		if (paramJson != null && !paramJson.equals("") && !paramJson.equals("{}")) {
+			ObjectMapper mapper = new ObjectMapper();
+			pojo = mapper.readValue(paramJson, UsuarioSucursal.class);
+		}
+		UsuarioSucursalService usuarioSucursalService = new UsuarioSucursalService();
+		respuesta = usuarioSucursalService.modificar(pojo);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
 	}
 
 }
