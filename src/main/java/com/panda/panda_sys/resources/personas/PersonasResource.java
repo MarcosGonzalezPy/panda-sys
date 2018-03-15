@@ -33,7 +33,7 @@ public class PersonasResource {
 		List<Personas> lista = new ArrayList<Personas>();
 		Personas valor = new Personas();
 
-		if (paramJson != null && !paramJson.equals("") && !paramJson.equals("{}")) {
+		if (paramJson != null && !paramJson.equals("") ) {
 			ObjectMapper mapper = new ObjectMapper();
 			valor = mapper.readValue(paramJson, Personas.class);
 		}
@@ -44,6 +44,24 @@ public class PersonasResource {
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 
+	@GET
+	@Path("/listar/{paramJson}")
+	public Response listar(@PathParam("paramJson") String paramJson)
+			throws SQLException, JsonParseException, JsonMappingException, IOException {
+		List<Personas> lista = new ArrayList<Personas>();
+		Personas valor = new Personas();
+
+		if (paramJson != null && !paramJson.equals("") ) {
+			ObjectMapper mapper = new ObjectMapper();
+			valor = mapper.readValue(paramJson, Personas.class);
+		}
+		PersonasService personasService = new PersonasService();
+		lista = personasService.listar(valor, false);
+		Gson gson = new Gson();
+		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
 	@POST
 	@Path("/insertar")
 	public Response insertar(@QueryParam("paramJson") String paramJson)

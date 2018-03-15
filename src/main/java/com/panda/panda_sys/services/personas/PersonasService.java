@@ -54,6 +54,24 @@ public class PersonasService extends Conexion {
 				}
 				sql = sql + conector + " nombre like upper('%" + personas.getNombre() + "%')  ";
 			}
+			if (personas.getRuc() != null) {
+				String conector = null;
+				if (sql.contains("where")) {
+					conector = " and ";
+				} else {
+					conector = " where ";
+				}
+				sql = sql + conector + " ruc = '" + personas.getRuc() + "' ";
+			}
+			if (personas.getCedula() != null) {
+				String conector = null;
+				if (sql.contains("where")) {
+					conector = " and ";
+				} else {
+					conector = " where ";
+				}
+				sql = sql + conector + " cedula =  " + personas.getCedula() + "  ";
+			}
 
 		}
 
@@ -75,16 +93,6 @@ public class PersonasService extends Conexion {
 				conector = " where ";
 			}
 			sql = sql + conector + " apellido like upper('%" + personas.getApellido() + "%') ";
-		}
-
-		if (personas.getRuc() != null) {
-			String conector = null;
-			if (sql.contains("where")) {
-				conector = " and ";
-			} else {
-				conector = " where ";
-			}
-			sql = sql + conector + " ruc like '%" + personas.getRuc() + "%' ";
 		}
 
 		Statement statement = con.ObtenerConexion().createStatement();
@@ -237,8 +245,8 @@ public class PersonasService extends Conexion {
 		try {
 			c.setAutoCommit(false);
 			String sql = "insert into personas (cedula,  nombre,  apellido,  fecha_nacimiento,  nacionalidad,"
-					+ "  pais,  ciudad,  barrio,  direccion,  correo_electronico,  ruc, sexo,  telefono,  celular_principal,  celular_secundario, estado) "
-					+ "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+					+ "  pais,  ciudad,  barrio,  direccion,  correo_electronico,  ruc, sexo,  telefono,  celular_principal,  celular_secundario, estado ) "
+					+ "values (?,UPPER( ? ),UPPER( ? ),?,?,?,?,?,?,?,?,?,?,?,?,?);";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setInt(1, personas.getCedula());
 			ps.setString(2, personas.getNombre());
@@ -255,7 +263,7 @@ public class PersonasService extends Conexion {
 			ps.setString(13, personas.getTelefono());
 			ps.setString(14, personas.getCelularPrincipal());
 			ps.setString(15, personas.getCelularSecundario());
-			ps.setString(16, personas.getEstado());
+			ps.setString(16, personas.getEstado()); 
 			ps.execute();
 
 			c.commit();
@@ -300,6 +308,7 @@ public class PersonasService extends Conexion {
 			ps.setString(14, personas.getCelularPrincipal());
 			ps.setString(15, personas.getCelularSecundario());
 			ps.setString(16, personas.getEstado());
+			ps.setInt(17, Integer.parseInt(personas.getCodigo()));
 			ps.execute();
 
 			c.close();

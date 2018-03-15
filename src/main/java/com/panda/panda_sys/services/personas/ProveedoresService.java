@@ -1,5 +1,7 @@
 package com.panda.panda_sys.services.personas;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -8,9 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.panda.panda_sys.model.catalogo.CuentasBancarias;
-import com.panda.panda_sys.model.catalogo.Servicios;
-import com.panda.panda_sys.model.personas.Personas;
 import com.panda.panda_sys.model.personas.Proveedores;
 import com.panda.panda_sys.util.Conexion;
 
@@ -20,21 +19,29 @@ public class ProveedoresService extends Conexion {
 	Map<String, String> resultado = new HashMap<String, String>();
 	ResultSet rs = null;
 	private PersonasService personasService;
-	
+
 	public List<Proveedores> listar(Proveedores personas, boolean complexQuery) throws SQLException {
 		List<Proveedores> lista = new ArrayList<Proveedores>();
 		String sql = " select * from personas p, proveedores pr  " + " where p.codigo = pr.codigo ";
 		if (complexQuery) {
 			if (personas.getNombre() != null) {
-				sql = sql + " and " + " (p.nombre like '%" + personas.getNombre() + "%'  or apellido like '%"
-						+ personas.getNombre() + "%' )";
+				sql = sql + " and " + " (p.nombre like  upper('%" + personas.getNombre()
+						+ "%')  or apellido like  upper('%" + personas.getNombre() + "%') )";
 			}
 			if (personas.getRuc() != null) {
-				sql = sql + " and " + " (p.ruc = '" + personas.getRuc() + "' or cedula = '" + personas.getRuc() + "') ";
+				sql = sql + " and " + " (p.ruc = '" + personas.getRuc() +  "' ";
+				if(!personas.getRuc().contains("-")){
+					sql+=" or cedula = '" + personas.getRuc() +"' ";
+				}
+				sql+=")";
 			}
 
 		} else {
-			sql = sql + " and " + " p.nombre like '%" + personas.getNombre() + "%'  ";
+			sql = sql + " and " + " p.nombre like  upper('%" + personas.getNombre() + "%' ) ";
+		}
+		if (personas.getRepresentanteNombre() != null) {
+			sql = sql + " and " + " (pr.representante_nombre like  upper('%" + personas.getRepresentanteNombre()
+					+ "%' ) )";
 		}
 
 		if (personas.getCodigo() != null) {
@@ -47,7 +54,7 @@ public class ProveedoresService extends Conexion {
 
 		if (personas.getRuc() != null) {
 			sql = sql + " and " + " p.ruc like '%" + personas.getRuc() + "%' ";
-		}
+		} 
 
 		Statement statement = con.ObtenerConexion().createStatement();
 		rs = statement.executeQuery(sql);
@@ -82,51 +89,57 @@ public class ProveedoresService extends Conexion {
 	}
 
 	public boolean insertar(Proveedores proveedores) throws SQLException {
-		Personas personas = new Personas();
+		Connection c = ObtenerConexion();
 		try {
-			if (proveedores.getCodigo() != null || proveedores.getCedula() != null || proveedores.getRuc() != null
-					|| proveedores.getNombre() != null) {
-				List<Personas> listaPersonas = new ArrayList<Personas>();
+			c.setAutoCommit(false);
+			String sql = "insert into proveedores (codigo, representante_nombre, representante_telefono, representante_celular, pagina_web, obs) "
+					+ "values (?,UPPER(?),?,?,?,UPPER(?));";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setInt(1, Integer.parseInt(proveedores.getCodigo()));
+			ps.setString(2, proveedores.getRepresentanteNombre());
+			ps.setString(3, proveedores.getRepresentanteTelefono());
+			ps.setString(4, proveedores.getRepresentanteCelular());
+			ps.setString(5, proveedores.getPaginaWeb());
+			ps.setString(6, proveedores.getObs());
+			ps.execute();
 
-				personas.setCodigo(proveedores.getCodigo());
-				personas.setCedula(proveedores.getCedula());
-				personas.setRuc(proveedores.getRuc());
-				personas.setNombre(proveedores.getNombre());
-				listaPersonas = personasService.listarPersonas(personas);
-
-				if (listaPersonas.isEmpty()) {
-					personas.setCedula(proveedores.getCedula());
-					personas.setNombre(proveedores.getNombre());
-					personas.setApellido(proveedores.getApellido());
-					personas.setFechaNacimiento(proveedores.getFechaNacimiento());
-					personas.setNacionalidad(proveedores.getNacionalidad());
-					personas.setPais(proveedores.getPais());
-					personas.setCiudad(proveedores.getCiudad());
-					personas.setBarrio(proveedores.getBarrio());
-					personas.setDireccion(proveedores.getDireccion());
-					personas.setCorreoElectronico(proveedores.getCorreoElectronico());
-					personas.setRuc(proveedores.getRuc());
-					personas.setSexo(proveedores.getSexo());
-					personas.setTelefono(proveedores.getTelefono());
-					personas.setCelularPrincipal(proveedores.getCelularPrincipal());
-					personas.setCelularSecundario(proveedores.getCelularSecundario());
-					personas.setEstado(proveedores.getEstado());
-
-					personasService.insertarPersonas(personas);
-
-				}
-			}
-			String sql = "insert into proveedores (representante_nombre, representante_telefono, representante_celular, pagina_web, obs) "
-					+ "values ( UPPER('" + proveedores.getRepresentanteNombre() + "') , (" + proveedores.getTelefono()
-					+ "),(" + proveedores.getRepresentanteCelular() + "), (" + proveedores.getPaginaWeb() + " ),("
-					+ proveedores.getObs() + ");";
-			Statement statement = con.ObtenerConexion().createStatement();
-			statement.execute(sql);
+			c.commit();
+			c.close();
+			return true;
 		} catch (Exception e) {
-			System.out.println("ERROR: " + e.getMessage());
+			c.close();
+			System.out.println("ERROR " + e.getMessage());
 			return false;
 		}
+	}
 
+	public boolean eliminar(Integer codigo) throws SQLException {
+		String sql = "delete from proveedores where codigo = '" + codigo + "'  ";
+		Statement stmt = con.ObtenerConexion().createStatement();
+		stmt.execute(sql);
 		return true;
-	} 
+	}
+
+	public boolean modificar(Proveedores proveedores) throws SQLException {
+		Connection c = ObtenerConexion();
+		try {
+			String sql = "update proveedores set " + "  representante_nombre=UPPER( ? ),  representante_telefono= ? ,"
+					+ "  representante_celular=?, pagina_web=? ,  obs=UPPER( ? )" + "  where codigo = ?";
+
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, proveedores.getRepresentanteNombre());
+			ps.setString(2, proveedores.getRepresentanteTelefono());
+			ps.setString(3, proveedores.getRepresentanteCelular());
+			ps.setString(4, proveedores.getPaginaWeb());
+			ps.setString(5, proveedores.getObs());
+			ps.setInt(6, Integer.parseInt( proveedores.getCodigo()));
+			ps.execute();
+
+			c.close();
+			return true;
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
+	}
 }
