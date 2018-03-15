@@ -182,6 +182,7 @@ public class VentasService extends Conexion {
 				entidad.setTotal(rs.getInt("total"));
 				entidad.setImpuesto(rs.getInt("impuesto"));
 				entidad.setTipo(rs.getString("tipo"));
+				entidad.setEstado(rs.getString("estado"));
 				lista.add(entidad);
 			}
 			return lista;
@@ -300,6 +301,41 @@ public class VentasService extends Conexion {
 					p3.setString(3, param.getSucursal());
 					p3.execute();
 				}
+			}
+			//TODO
+			Long secuencia = null;
+			String sql4 = " select * from circuito_servicio_cotizacion where numero_factura = ? ";
+			PreparedStatement ps4 = c.prepareStatement(sql4);
+			ps4.setString(1, param.getNumeroFactura());
+			ResultSet rs4 = ps4.executeQuery();
+			while(rs4.next()){
+				secuencia = rs4.getLong("secuencia");
+			}
+			if(secuencia != null){
+				Long paso= null;
+				String sql0 = "select max(paso) from circuito_servicio where secuencia =? ";
+	    		PreparedStatement ps0 =c.prepareStatement(sql0);
+	    		ps0.setLong(1, secuencia);
+	    		ResultSet rs0 = ps0.executeQuery();
+	    		while(rs0.next()){
+	    			paso= rs0.getLong("max");
+	    		}
+	    		
+	    		String sql5 ="update circuito_servicio set es_ultimo = 'N' where paso=? and secuencia =?";
+	    		PreparedStatement ps5 = c.prepareStatement(sql5);
+	    		ps5.setLong(1, paso);
+	    		ps5.setLong(2, secuencia);
+	    		ps5.execute();
+	    		
+	    		String sql6= "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha, es_ultimo) "
+	    				+ "values (?,?,?,?,?,current_date, 'S');";	
+	    		PreparedStatement ps6=c.prepareStatement(sql6); 
+	    		ps6.setLong(1, secuencia);
+	    		ps6.setString(2,"PAGADO");
+	    		ps6.setLong(3, paso+1);
+	    		ps6.setString(4, param.getSucursal());
+	    		ps6.setString(5, param.getCajero());
+	    		ps6.execute();
 			}
 			c.commit();
 		} catch (Exception e) {

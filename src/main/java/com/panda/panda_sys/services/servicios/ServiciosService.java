@@ -292,14 +292,27 @@ public class ServiciosService extends Conexion{
     		ps.setString(6, cs.getObservacion());
     		ps.execute();
     		
-    		Secuencia secuencia = new Secuencia();
-    		String numeroFactura = secuencia.getSecuencia("factura_seq");
-    		String sql2 = "insert into circuito_servicio_cotizacion (secuencia,paso,numero_factura) values(?,?,?)";
-    		PreparedStatement ps2 = c.prepareStatement(sql2);
-    		ps2.setLong(1, cs.getSecuencia());
-    		ps2.setLong(2,paso);
-    		ps2.setString(3,numeroFactura);
-    		ps2.execute();
+    		String numeroFactura = null;
+    		if(paso == 2){
+        		Secuencia secuencia = new Secuencia();
+        		numeroFactura = secuencia.getSecuencia("factura_seq");
+        		String sql2 = "insert into circuito_servicio_cotizacion (secuencia,paso,numero_factura) values(?,?,?)";
+        		PreparedStatement ps2 = c.prepareStatement(sql2);
+        		ps2.setLong(1, cs.getSecuencia());
+        		ps2.setLong(2,paso);
+        		ps2.setString(3,numeroFactura);
+        		ps2.execute();
+    		}else{
+    			String sql2 = "select numero_factura from circuito_servicio_cotizacion where secuencia = ? ";
+    			PreparedStatement ps2 = c.prepareStatement(sql2);
+        		ps2.setLong(1, cs.getSecuencia());
+        		ResultSet rs2= ps2.executeQuery();
+        		while(rs2.next()){
+        			numeroFactura = rs2.getString("numero_factura");
+        		}
+    			
+    		}
+
     		
     		String sql3 = "insert into factura_detalle (factura_id, codigo_articulo, cantidad, precio, iva, total, impuesto, tipo, estado) values (?,?,?,?,?,?,?,?,?)";
     		for(FacturaDetalle det: fd){
@@ -325,6 +338,7 @@ public class ServiciosService extends Conexion{
     		c.close();
     		return true;
     	}catch(Exception e){
+    		System.out.println("ERROR: "+e.getMessage());
 			c.close();
 			return false;
 		}
@@ -572,6 +586,86 @@ public class ServiciosService extends Conexion{
 			c.close();
 		}
 		return lista;
+	}
+	
+	public Boolean transpasoFacturacion(CircuitoServicio cs) throws SQLException{
+		Long secuencia = cs.getSecuencia();
+		try {
+			Connection c = ObtenerConexion();
+			c.setAutoCommit(false);
+			String numeroFactura =null;
+			String sql = "select * from circuito_servicio_cotizacion where secuencia = ? ";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setLong(1, secuencia);
+			ResultSet rs = ps.executeQuery();
+			Long codigoPersona = null;
+			while(rs.next()){
+				numeroFactura = rs.getString("numero_factura");
+			}
+			String sql2 = " select * from circuito_servicio_ingreso where secuencia = ? ";
+			PreparedStatement ps2 = c.prepareStatement(sql2);
+			ps2.setLong(1, secuencia);
+			ResultSet rs2 = ps2.executeQuery();
+			while(rs2.next()){				
+				codigoPersona = rs2.getLong("codigo_persona");
+			}
+			String sql3 = " select * from personas where codigo= ?";
+			PreparedStatement ps3 =c.prepareStatement(sql3);
+			ps3.setLong(1,codigoPersona);
+			ResultSet rs3 = ps3.executeQuery();
+			String nombre=null;
+			String ruc=null;
+			String telefono= null;
+			while(rs3.next()){
+				nombre = rs3.getString("nombre")+" "+rs3.getString("apellido");
+				ruc = rs3.getString("ruc");
+				telefono = rs3.getString("telefono");
+			}
+			String sql4 = "insert into factura_cabecera(numero_factura, cliente, ruc, telefono, sucursal, fecha, usuario, estado, codigo_persona)"
+					+ "values(?,?,?,?,?,?,?,?,?)";
+			PreparedStatement ps4 = c.prepareStatement(sql4);
+			ps4.setString(1, numeroFactura);
+			ps4.setString(2, nombre);
+			ps4.setString(3, ruc);
+			ps4.setString(4, telefono);
+			ps4.setString(5, cs.getLugar());
+			ps4.setDate(6, new java.sql.Date(System.currentTimeMillis()));
+			ps4.setString(7, cs.getResponsable());
+			ps4.setString(8, "BORRADOR");
+			ps4.setLong(9, codigoPersona);
+			ps4.execute();
+
+			Long paso= null;
+			String sql0 = "select max(paso) from circuito_servicio where secuencia =? ";
+    		PreparedStatement ps0 =c.prepareStatement(sql0);
+    		ps0.setLong(1, secuencia);
+    		ResultSet rs0 = ps0.executeQuery();
+    		while(rs0.next()){
+    			paso= rs0.getLong("max")+1;
+    		}
+    		
+    		String sql5 ="update circuito_servicio set es_ultimo = 'N' where paso=? and secuencia =?";
+    		PreparedStatement ps5 = c.prepareStatement(sql5);
+    		ps5.setLong(1, paso-1);
+    		ps5.setLong(2, cs.getSecuencia());
+    		ps5.execute();
+    		
+    		String sql6= "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha, es_ultimo) "
+    				+ "values (?,?,?,?,?,current_date, 'S');";	
+    		PreparedStatement ps6=c.prepareStatement(sql6); 
+    		ps6.setLong(1, secuencia);
+    		ps6.setString(2,"PENDIENTE_FACTURACION");
+    		ps6.setLong(3, paso);
+    		ps6.setString(4, cs.getLugar());
+    		ps6.setString(5, cs.getResponsable());
+    		ps6.execute();
+			c.commit();
+			c.close();
+		} catch (Exception e) {
+			System.out.println("ERROR: "+e.getMessage());
+			return false;
+		}
+		return true;
 	}
 
 }

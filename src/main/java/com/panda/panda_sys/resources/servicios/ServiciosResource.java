@@ -260,5 +260,22 @@ public class ServiciosResource {
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();		
 	}
 	
+	@POST
+	@Path("transpaso-facturacion")
+	public Response transpasoFacturacion(@QueryParam("paramJson") String paramJson) throws JsonParseException, JsonMappingException, IOException, SQLException{
+		CircuitoServicio entidad = new CircuitoServicio();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			entidad = mapper.readValue(paramJson, CircuitoServicio.class);
+		}	
+		ServiciosService serviciosService = new ServiciosService();
+		Boolean respuesta = serviciosService.transpasoFacturacion(entidad);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();	
+	}
+	
 
 }

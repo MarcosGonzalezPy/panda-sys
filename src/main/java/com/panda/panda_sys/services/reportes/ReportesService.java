@@ -1,58 +1,37 @@
 package com.panda.panda_sys.services.reportes;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.panda.panda_sys.model.reportes.Reportes;
 import com.panda.panda_sys.util.Conexion;
-
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JRExporterParameter;
-import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.JasperRunManager;
-import net.sf.jasperreports.engine.export.JRXlsExporter;
 
 public class ReportesService extends Conexion {
 
-	public byte[] exportar(String idProceso, String codRechazo, String formato) throws JRException, SQLException, FileNotFoundException {
-		formato = "PDF";
-		Connection c = ObtenerConexion();
-
-		// obtenemos el reporte
-		ClassLoader clPrueba = ReportesService.class.getClassLoader();
-		System.out.println(""+clPrueba);
-		
-		ClassLoader cL = getClass().getClassLoader();
-		InputStream path = new FileInputStream("c:/reportes/pagare.jasper");
-// cL.getResourceAsStream("	pagare.jasper");	
-		// InputStream logo =
-		// cL.getResourceAsStream("imagen/personal-logo.jpg");
-
-		Map<String, Object> parametros = new HashMap<String, Object>();
-		/*
-		parametros.put("id_proceso", idProceso);
-		parametros.put("codigo_rechazo", codRechazo);
-		parametros.put("imagen", logo);
-		*/
-		// generamos reporte
-		if ("PDF".equals(formato))
-			return JasperRunManager.runReportToPdf(path, parametros, c);
-		else {
-			ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-			JRXlsExporter exporter = new JRXlsExporter();
-			JasperPrint jasperPrint = JasperFillManager.fillReport(path, parametros, c);
-			exporter.setParameter(JRExporterParameter.JASPER_PRINT, jasperPrint);
-			exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, byteArrayOutputStream);
-			exporter.exportReport();
-			return byteArrayOutputStream.toByteArray();
+	public List<Reportes> listarReportes(String modulo){
+		List<Reportes> lista = new ArrayList	<Reportes>();
+		try {
+			Connection c =ObtenerConexion();
+			String sql = " select * from reportes where modulo = ? ";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, modulo);
+			ResultSet rs = ps.executeQuery();
+			while(rs.next()){
+				Reportes entidad = new Reportes();
+				entidad.setId(rs.getLong("id"));
+				entidad.setModulo(rs.getString("modulo"));
+				entidad.setPath(rs.getString("path"));
+				entidad.setEstado(rs.getString("estado"));
+				entidad.setNombre(rs.getString("nombre"));
+				entidad.setDescripcion(rs.getString("descripcion"));
+				lista.add(entidad);
+			}			
+		} catch (Exception e) {
+			System.out.println("Error: "+e.getMessage());
 		}
-
+		return lista;
 	}
-
 }
