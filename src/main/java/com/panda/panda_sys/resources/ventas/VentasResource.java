@@ -36,11 +36,11 @@ import com.panda.panda_sys.services.ventas.VentasService;
 import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 @Path("ventas/")
+@Produces(MediaType.APPLICATION_JSON)
 public class VentasResource {
 	
 	@GET
 	@Path("ventas-stock-por-sucursal")
-	@Produces(MediaType.APPLICATION_JSON)
 	public Response obtenerVentasStockPorSucursal(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException{
 		List<VentasStockPorSucursal> lista = new ArrayList<VentasStockPorSucursal>();
 		VentasService ventasService = new VentasService();
@@ -159,6 +159,19 @@ public class VentasResource {
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
 				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
 				.build();		
+	}
+	
+	@GET
+	@Path("listar-detalle-aprovado-reparacion/{secuencia}")
+	public Response listarDetalleAprovadoReparacion(@PathParam("secuencia") Long secuencia){
+		VentasService ventasService = new VentasService();
+		List<FacturaDetalle> respuesta = ventasService.listarDetalleAprovadoReparacion(secuencia);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();	
+		
 	}
 
 }

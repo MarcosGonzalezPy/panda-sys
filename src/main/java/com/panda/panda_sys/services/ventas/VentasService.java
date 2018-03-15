@@ -441,5 +441,36 @@ public class VentasService extends Conexion {
 			return false;
 		}		
 	}
+	
+	public List<FacturaDetalle> listarDetalleAprovadoReparacion(Long secuencia){
+		List<FacturaDetalle> lista = new ArrayList<FacturaDetalle>();
+		try {			
+			Connection c= ObtenerConexion();
+			String sql = "select a.descripcion, fd.* from factura_detalle fd, (select codigo,descripcion from servicios union "
+					+ "select codigo, descripcion from articulos)a "
+					+ "where a.codigo = fd.codigo_articulo "
+					+ "and fd.factura_id = (select numero_factura from circuito_servicio_cotizacion where secuencia = ?)";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setLong(1, secuencia);
+			ResultSet rs = ps.executeQuery();
+			while(rs.next()){
+				FacturaDetalle facturaDetalle= new FacturaDetalle();
+				facturaDetalle.setDescripcion(rs.getString("descripcion"));
+				facturaDetalle.setFacturaId(rs.getString("factura_id"));
+				facturaDetalle.setCantidad(rs.getInt("cantidad"));
+				facturaDetalle.setCodigoArticulo(rs.getString("codigo_articulo"));
+				facturaDetalle.setPrecio(rs.getInt("precio"));
+				facturaDetalle.setIva(rs.getInt("iva"));
+				facturaDetalle.setTotal(rs.getInt("total"));
+				facturaDetalle.setImpuesto(rs.getInt("impuesto"));
+				facturaDetalle.setTipo(rs.getString("tipo"));
+				facturaDetalle.setEstado(rs.getString("estado"));
+				lista.add(facturaDetalle);
+			}
+		} catch (Exception e) {
+			System.out.println("ERROR :"+e.getMessage());
+		}
+		return lista;
+	}
 
 }
