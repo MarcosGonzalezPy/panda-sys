@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -16,6 +17,7 @@ import javax.ws.rs.core.Response;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.personas.Accesos;
 import com.panda.panda_sys.model.personas.UsuarioSucursal;
@@ -24,9 +26,10 @@ import com.panda.panda_sys.services.personas.AccesosService;
 import com.panda.panda_sys.services.personas.UsuariosService;
 
 @Path("/personas/usuarios/")
+@Produces(MediaType.APPLICATION_JSON)
 public class UsuariosResource {
 
-	@GET
+	@POST
 	@Path("/insertar")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response insertar(@QueryParam("paramJson") String paramJson)
@@ -37,8 +40,13 @@ public class UsuariosResource {
 			ObjectMapper mapper = new ObjectMapper();
 			usuarios = mapper.readValue(paramJson, Usuarios.class);
 		}
-		usuariosService.insertar(usuarios);
-		return Response.ok().header("Access-Control-Allow-Origin", "*").build();
+
+		boolean result = usuariosService.insertar(usuarios);
+		Gson gson = new Gson();
+		String json = gson.toJson(result);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
+
 	}
 
 	@GET
@@ -106,6 +114,37 @@ public class UsuariosResource {
 		Gson gson = new Gson();
 		String json = gson.toJson(accesos);	
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+
+	@POST
+	@Path("/modificar")
+	public Response editar(@QueryParam("paramJson") String paramJson)
+			throws JsonParseException, JsonMappingException, IOException, SQLException {
+		Boolean respuesta = null;
+		Usuarios usuarios = new Usuarios();
+		UsuariosService usuariosService = new UsuariosService();
+		if (paramJson != null && !paramJson.equals("") && !paramJson.equals("{}")) {
+			ObjectMapper mapper = new ObjectMapper();
+			usuarios = mapper.readValue(paramJson, Usuarios.class);
+		}
+		respuesta = usuariosService.modificar(usuarios);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
+	}
+
+	@GET
+	@Path("/eliminar/{codigo}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response eliminar(@PathParam("codigo") Integer codigo) throws SQLException {
+
+		UsuariosService usuariosService = new UsuariosService();
+		boolean result = usuariosService.eliminar(codigo);
+		Gson gson = new Gson();
+		String json = gson.toJson(result);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
 	}
 
 }

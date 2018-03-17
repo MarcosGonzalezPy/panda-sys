@@ -1,5 +1,7 @@
 package com.panda.panda_sys.services.personas;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -8,9 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.panda.panda_sys.model.personas.Accesos;
-import com.panda.panda_sys.model.personas.Clientes;
-import com.panda.panda_sys.model.personas.Personas;
 import com.panda.panda_sys.model.personas.UsuarioSucursal;
 import com.panda.panda_sys.model.personas.Usuarios;
 import com.panda.panda_sys.util.Conexion;
@@ -22,37 +21,27 @@ public class UsuariosService extends Conexion {
 	ResultSet rs = null;
 
 	public boolean insertar(Usuarios usuarios) throws SQLException {
-		String sql = "insert into personas (cedula,nombre,apellido,fecha_nacimiento,nacionalidad,pais,ciudad,barrio,direccion, "
-				+ " correo_electronico,ruc,sexo,telefono,celular_principal,estado) " + "values ( " + " "
-				+ usuarios.getCedula() + " ," + "UPPER ('" + usuarios.getNombre() + "')," + "upper ('"
-				+ usuarios.getApellido() + "')," + "'" + usuarios.getFechaNacimiento() + "'," + "'"
-				+ usuarios.getNacionalidad() + "'," + "'" + usuarios.getPais() + "'," + "'" + usuarios.getCiudad()
-				+ "'," + "'" + usuarios.getBarrio() + "'," + "'" + usuarios.getDireccion() + "'," + "'"
-				+ usuarios.getCorreoElectronico() + "'," + "'" + usuarios.getRuc() + "'," + "'" + usuarios.getSexo()
-				+ "'," + "'" + usuarios.getTelefono() + "'," + "'" + usuarios.getCelularPrincipal() + "',"
-				+ "'ACTIVO');";
-		Statement statement = con.ObtenerConexion().createStatement();
-		statement.execute(sql);
+		Connection c = ObtenerConexion();
+		try {
+			c.setAutoCommit(false);
+			String sql = "insert into usuarios (codigo, usuario, contrasenha, rol, resetear) "
+					+ "values (?, ? ,?,UPPER(?),UPPER(?));";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setInt(1, Integer.parseInt(usuarios.getCodigo()));
+			ps.setString(2, usuarios.getUsuario());
+			ps.setString(3, usuarios.getContrasenha());
+			ps.setString(4, usuarios.getRol());
+			ps.setString(5, usuarios.getResetear());
+			ps.execute();
 
-		String sql2 = "select * from personas where cedula = " + usuarios.getCedula() + "" + " and nombre = UPPER('"
-				+ usuarios.getNombre() + "') " + " and apellido = UPPER('" + usuarios.getApellido() + "')";
-		Statement stmt2 = con.ObtenerConexion().createStatement();
-		rs = stmt2.executeQuery(sql2);
-		Integer codigoPersona = null;
-		while (rs.next()) {
-			codigoPersona = rs.getInt("codigo");
+			c.commit();
+			c.close();
+			return true;
+		} catch (Exception e) {
+			c.close();
+			System.out.println("ERROR " + e.getMessage());
+			return false;
 		}
-
-		String sql3 = " insert into usuarios (codigo, usuario) values (" + codigoPersona + ", '" + usuarios.getUsuario()
-				+ "')";
-		Statement stmt3 = con.ObtenerConexion().createStatement();
-		stmt3.execute(sql3);
-
-		String sql4 = " insert into accesos (usuario, contrasenha, rol) values('" + usuarios.getUsuario() + "', '"
-				+ usuarios.getUsuario() + "', '" + usuarios.getRol() + "')";
-		Statement stmt4 = con.ObtenerConexion().createStatement();
-		stmt4.execute(sql4);
-		return true;
 	}
 
 	public List<Usuarios> listar(Usuarios personas, boolean complexQuery) throws SQLException {
@@ -68,8 +57,12 @@ public class UsuariosService extends Conexion {
 				}
 				sql = sql + conector + " (p.nombre like '%" + personas.getNombre() + "%'  or apellido like '%"
 						+ personas.getNombre() + "%' )";
-				sql = sql + conector + " (p.nombre like  upper('%" + personas.getNombre()
-						+ "%')  or apellido like  upper('%" + personas.getNombre() + "%') )";
+
+				/*
+				 * sql = sql + conector + " (p.nombre like  upper('%" +
+				 * personas.getNombre() + "%')  or apellido like  upper('%" +
+				 * personas.getNombre() + "%') )";
+				 */
 			}
 			if (personas.getRuc() != null) {
 				String conector = null;
@@ -221,6 +214,31 @@ public class UsuariosService extends Conexion {
         }
         entidad.setModulos(modulos);
 		return entidad;
+	}
+
+	public boolean modificar(Usuarios usuarios) throws SQLException {
+		Connection c = ObtenerConexion();
+		try {
+			String sql = "update usuarios set  rol=UPPER( ? )  where codigo = ?";
+
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, usuarios.getRol());
+			ps.setInt(2, Integer.parseInt(usuarios.getCodigo()));
+			ps.execute();
+
+			c.close();
+			return true;
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
+	}
+
+	public boolean eliminar(Integer codigo) throws SQLException {
+		String sql = "delete from usuarios where codigo = '" + codigo + "'  ";
+		Statement stmt = con.ObtenerConexion().createStatement();
+		stmt.execute(sql);
+		return true;
 	}
 
 }
