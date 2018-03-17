@@ -667,5 +667,43 @@ public class ServiciosService extends Conexion{
 		}
 		return true;
 	}
+	
+	public Boolean entregar(CircuitoServicio cs) throws SQLException{
+		Long secuencia = cs.getSecuencia();
+		try {
+			Connection c= ObtenerConexion();
+			c.setAutoCommit(false);
+			Long paso= null;
+			String sql0 = "select max(paso) from circuito_servicio where secuencia =? ";
+    		PreparedStatement ps0 =c.prepareStatement(sql0);
+    		ps0.setLong(1, secuencia);
+    		ResultSet rs0 = ps0.executeQuery();
+    		while(rs0.next()){
+    			paso= rs0.getLong("max");
+    		}
+    		
+    		String sql5 ="update circuito_servicio set es_ultimo = 'N' where paso=? and secuencia =?";
+    		PreparedStatement ps5 = c.prepareStatement(sql5);
+    		ps5.setLong(1, paso);
+    		ps5.setLong(2, secuencia);
+    		ps5.execute();
+    		
+    		String sql6= "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha, es_ultimo) "
+    				+ "values (?,?,?,?,?,current_date, 'S');";	
+    		PreparedStatement ps6=c.prepareStatement(sql6); 
+    		ps6.setLong(1, secuencia);
+    		ps6.setString(2,"RETIRADO");
+    		ps6.setLong(3, paso+1);
+    		ps6.setString(4, cs.getLugar());
+    		ps6.setString(5, cs.getResponsable());
+    		ps6.execute();
+			c.commit();
+			c.close();
+		} catch (Exception e) {
+			System.out.println("ERROR: "+e.getMessage());
+			return false;
+		}
+		return true;
+	}
 
 }

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.panda.panda_sys.model.personas.Accesos;
 import com.panda.panda_sys.model.personas.Clientes;
 import com.panda.panda_sys.model.personas.Personas;
 import com.panda.panda_sys.model.personas.UsuarioSucursal;
@@ -198,6 +199,28 @@ public class UsuariosService extends Conexion {
 			lista.add(entidad);
 		}
 		return lista;
+	}
+	
+	public Accesos login(String usuario, String pass) throws SQLException{
+		String sql = "select * from usuarios where usuario ='"+usuario+"' and contrasenha= '"+pass+"'";
+		Statement statement = con.ObtenerConexion().createStatement();
+		rs = statement.executeQuery(sql);
+		Accesos entidad = null;
+        while(rs.next()){
+        	entidad = new Accesos();
+        	entidad.setUsuario(rs.getString("usuario"));
+        	entidad.setContrasenha(rs.getString("contrasenha"));
+        	entidad.setContrasenha(rs.getString("resetear"));
+        	entidad.setRol(rs.getString("rol"));
+        }
+        String sql2 = "select * from roles where rol = '"+entidad.getRol()+"'";
+        ResultSet rs2 = statement.executeQuery(sql2);
+        List<String> modulos = new ArrayList<String>();
+        while(rs2.next()){
+        	modulos.add(rs2.getString("modulo"));
+        }
+        entidad.setModulos(modulos);
+		return entidad;
 	}
 
 }

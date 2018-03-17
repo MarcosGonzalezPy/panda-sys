@@ -17,8 +17,10 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import com.google.gson.Gson;
+import com.panda.panda_sys.model.personas.Accesos;
 import com.panda.panda_sys.model.personas.UsuarioSucursal;
 import com.panda.panda_sys.model.personas.Usuarios;
+import com.panda.panda_sys.services.personas.AccesosService;
 import com.panda.panda_sys.services.personas.UsuariosService;
 
 @Path("/personas/usuarios/")
@@ -90,6 +92,19 @@ public class UsuariosResource {
 		lista = usuariosService.listarUsuarioSucursal(valor);
 		Gson gson = new Gson();
 		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("accesos/{usuario}/{pass}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response acceder(@PathParam("usuario") String usuario,
+			@PathParam("pass") String pass) throws SQLException {
+		Accesos accesos = new Accesos();
+		UsuariosService usuariosService = new UsuariosService();
+		accesos= usuariosService.login(usuario, pass);
+		Gson gson = new Gson();
+		String json = gson.toJson(accesos);	
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 

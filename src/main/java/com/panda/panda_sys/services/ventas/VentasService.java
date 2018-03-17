@@ -123,7 +123,7 @@ public class VentasService extends Conexion {
 			sql = sql + " and estado = '" + param.getEstado() + "' ";
 		}
 		Statement statement = con.ObtenerConexion().createStatement();
-		sql+=" order by numero_factura asc";
+		sql+=" order by numero_factura desc";
 		rs = statement.executeQuery(sql);
 		while (rs.next()) {
 			FacturaCabecera entidad = new FacturaCabecera();

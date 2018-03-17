@@ -20,17 +20,6 @@ import com.panda.panda_sys.services.personas.AccesosService;
 @Path("/personas/accesos")
 public class AccesosResource {
 	
-	@GET
-	@Path("/{usuario}/{pass}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response acceder(@PathParam("usuario") String usuario,
-			@PathParam("pass") String pass) throws SQLException {
-		Accesos accesos = new Accesos();
-		AccesosService accesosService = new AccesosService();
-		accesos= accesosService.login(usuario, pass);
-		Gson gson = new Gson();
-		String json = gson.toJson(accesos);	
-		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
-	}
+	
 
 }
