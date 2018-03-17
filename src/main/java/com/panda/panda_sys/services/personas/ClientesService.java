@@ -37,11 +37,13 @@ public class ClientesService extends Conexion {
 		Connection c = ObtenerConexion();
 		try {
 			c.setAutoCommit(false);
-			String sql = "insert into clientes (codigo,razon_social,limite_credito) " + "values (?,UPPER(?),?);";
+			String sql = "insert into clientes (codigo,razon_social,limite_credito,tipo_persona) " 
+			+ "values (?,?,?,?);";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setInt(1, Integer.parseInt(clientes.getCodigo()));
 			ps.setString(2, clientes.getRazonSocial());
 			ps.setInt(3, Integer.parseInt(clientes.getLimiteCredito()));
+			ps.setString(4, clientes.getTipoPersona());
 			ps.execute();
 
 			c.commit();
@@ -105,6 +107,7 @@ public class ClientesService extends Conexion {
 			entidad.setEstado(rs.getString("estado"));
 			entidad.setRazonSocial(rs.getString("razon_social"));
 			entidad.setLimiteCredito(rs.getString("limite_credito"));
+			entidad.setTipoPersona(rs.getString("tipo_persona"));
 			lista.add(entidad);
 		}
 
@@ -149,6 +152,7 @@ public class ClientesService extends Conexion {
 			entidad.setEstado(rs.getString("estado"));
 			entidad.setRazonSocial(rs.getString("razon_social"));
 			entidad.setLimiteCredito(rs.getString("limite_credito"));
+			entidad.setTipoPersona(rs.getString("tipo_persona"));
 			lista.add(entidad);
 		}
 
@@ -158,11 +162,12 @@ public class ClientesService extends Conexion {
 	public boolean modificar(Clientes clientes) throws SQLException {
 		Connection c = ObtenerConexion();
 		try {
-			String sql = "update clientes set " + "razon_social= UPPER(?),  limite_credito= ?" + "where codigo = ?";
+			String sql = "update clientes set " + "razon_social= UPPER(?),  limite_credito= ?, tipo_persona= ?" + "where codigo = ?";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setString(1, clientes.getRazonSocial());
 			ps.setInt(2, Integer.parseInt(clientes.getLimiteCredito()));
-			ps.setInt(3, Integer.parseInt(clientes.getCodigo()));
+			ps.setString(3, clientes.getTipoPersona());
+			ps.setInt(4, Integer.parseInt(clientes.getCodigo()));
 			ps.execute();
 
 			c.close();
