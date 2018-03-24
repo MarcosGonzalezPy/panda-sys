@@ -20,6 +20,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.reportes.Reportes;
+import com.panda.panda_sys.param.reportes.ReportesCompuesto;
+import com.panda.panda_sys.resources.recursosUtiles.UtilResource;
 import com.panda.panda_sys.services.reportes.ReportesService;
 
 @Path("reportes")
@@ -66,6 +68,23 @@ public class ReportesResource {
 			reportes = mapper.readValue(paramJson, Reportes.class);
 		}
 		boolean result = reportesService.insertarABM(reportes);
+		Gson gson = new Gson();
+		String json = gson.toJson(result);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
+	}
+
+	@POST
+	@Path("/insertarReportesCompuestos")
+	public Response insertarReportesCompuestos(@QueryParam("paramJson") String paramJson)
+			throws SQLException, JsonParseException, IOException {
+		ReportesService reportesService = new ReportesService();
+		ReportesCompuesto reportesCompuesto = new ReportesCompuesto();
+		if (!paramJson.equals("")) {
+			ObjectMapper mapper = new ObjectMapper(); 
+			reportesCompuesto = mapper.readValue(paramJson, ReportesCompuesto.class);
+		}
+		boolean result = reportesService.insertarReportesCompuestos(reportesCompuesto);
 		Gson gson = new Gson();
 		String json = gson.toJson(result);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
