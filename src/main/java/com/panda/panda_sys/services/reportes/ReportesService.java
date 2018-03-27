@@ -210,5 +210,48 @@ public class ReportesService extends Conexion {
 			return false;
 		}
 	}
+	
+	public boolean modificarReportesCompuestos(ReportesCompuesto reportesCompuesto) throws SQLException {
+		Reportes rep = reportesCompuesto.getReportes();
+		List<ReporteParametros> listaParametros = reportesCompuesto.getListaParametros();
+
+		try {
+			Connection c = ObtenerConexion();
+			c.setAutoCommit(false);
+			Secuencia secuenciaService = new Secuencia();
+			String secuencia = secuenciaService.getSecuencia("reportes_id_seq");
+
+			String sql = "insert into reportes (modulo,path,estado,nombre,descripcion,id) "
+					+ "values ( ? ,?, ? , ? , ? ,?);";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, rep.getModulo());
+			ps.setString(2, rep.getPath());
+			ps.setString(3, rep.getEstado());
+			ps.setString(4, rep.getNombre());
+			ps.setString(5, rep.getDescripcion());
+			ps.setLong(6, Long.parseLong(secuencia));
+			ps.execute();
+
+			if (listaParametros != null) {
+				for (ReporteParametros det : listaParametros) {
+					String sql2 = "insert into reporte_parametros(reporte_id, parametro, estado, tipo_dato)"
+							+ " values(?,?,?,?)";
+					PreparedStatement ps2 = c.prepareStatement(sql2);
+					ps2.setLong(1, Long.parseLong(secuencia));
+					ps2.setString(2, det.getParametro());
+					ps2.setString(3, rep.getEstado());
+					ps2.setString(4, det.getTipoDato());
+					ps2.execute();
+				}
+			}
+
+			c.commit();
+			c.close();
+			return true;
+		} catch (Exception e) {
+			System.out.println("ERROR " + e.getMessage());
+			return false;
+		}
+	}
 
 }

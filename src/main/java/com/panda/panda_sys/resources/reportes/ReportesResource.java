@@ -81,12 +81,30 @@ public class ReportesResource {
 		ReportesService reportesService = new ReportesService();
 		ReportesCompuesto reportesCompuesto = new ReportesCompuesto();
 		if (!paramJson.equals("")) {
-			ObjectMapper mapper = new ObjectMapper(); 
+			ObjectMapper mapper = new ObjectMapper();
 			reportesCompuesto = mapper.readValue(paramJson, ReportesCompuesto.class);
 		}
 		boolean result = reportesService.insertarReportesCompuestos(reportesCompuesto);
 		Gson gson = new Gson();
 		String json = gson.toJson(result);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
+	}
+
+	@POST
+	@Path("/modificarReportesCompuesto")
+	public Response editarReportesCompuestos(@QueryParam("paramJson") String paramJson)
+			throws JsonParseException, JsonMappingException, IOException, SQLException {
+		Boolean respuesta = null;
+		ReportesCompuesto reportesCompuesto = new ReportesCompuesto();
+		if (paramJson != null && !paramJson.equals("") && !paramJson.equals("{}")) {
+			ObjectMapper mapper = new ObjectMapper();
+			reportesCompuesto = mapper.readValue(paramJson, ReportesCompuesto.class);
+		}
+		ReportesService reportesService = new ReportesService();
+		respuesta = reportesService.modificarReportesCompuestos(reportesCompuesto);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
 				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
 	}
