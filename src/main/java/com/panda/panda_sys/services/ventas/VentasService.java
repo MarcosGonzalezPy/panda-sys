@@ -22,6 +22,7 @@ import com.panda.panda_sys.model.ventas.VentasStockPorSucursal;
 import com.panda.panda_sys.param.ventas.FormaPago;
 import com.panda.panda_sys.param.ventas.RegistrarPago;
 import com.panda.panda_sys.util.Conexion;
+import com.panda.panda_sys.util.NumberToLetterConverter;
 import com.panda.panda_sys.util.PandaException;
 import com.panda.panda_sys.util.Secuencia;
 
@@ -199,6 +200,15 @@ public class VentasService extends Conexion {
 			Connection c = ObtenerConexion();
 			c.setAutoCommit(false);
 			Long codigoMedioPago = null;
+			String suma = null;
+			String sql = "select sum(total) from factura_detalle where factura_id = ?";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, param.getNumeroFactura());
+			ResultSet rs = ps.executeQuery();
+			while(rs.next()){
+				suma = rs.getString("sum");
+			}
+			String glosa = NumberToLetterConverter.convertNumberToLetter(suma);
 			if (param.getCondicionCompra().equals("CONTADO")) {
 				List<FormaPago> listaFormaPago = param.getListaFormaPago();
 				for (FormaPago fp : listaFormaPago) {
@@ -218,7 +228,7 @@ public class VentasService extends Conexion {
 					p1.execute();
 				}
 				String sql2 = " update factura_cabecera set estado='COBRADO', timbrado= ?, "
-						+ "caja= ?,condicion_compra=?, medio_pago=?, cuotas=?, cajero=?  where numero_factura= ?";
+						+ "caja= ?,condicion_compra=?, medio_pago=?, cuotas=?, cajero=? , glosa=? where numero_factura= ?";
 				PreparedStatement p2 = c.prepareStatement(sql2);
 				p2.setString(1, param.getTimbrado());
 				p2.setString(2, param.getCaja());
@@ -226,7 +236,8 @@ public class VentasService extends Conexion {
 				p2.setLong(4, codigoMedioPago);
 				p2.setInt(5, (param.getCuotas() == null) ? 0 : param.getCuotas());
 				p2.setString(6, param.getCajero());
-				p2.setString(7, param.getNumeroFactura());
+				p2.setString(7, glosa);
+				p2.setString(8, param.getNumeroFactura());
 				p2.execute();
 			} else if (param.getCondicionCompra().equals("CREDITO")) {
 				String medidaPlazo;
