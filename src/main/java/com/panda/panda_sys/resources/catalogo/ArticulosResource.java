@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -21,9 +22,9 @@ import com.google.gson.Gson;
 import com.panda.panda_sys.model.catalogo.Articulos;
 import com.panda.panda_sys.param.ArticulosParam;
 import com.panda.panda_sys.services.catalogo.ArticulosService;
-import com.panda.panda_sys.services.catalogo.ValoresService;
 
 @Path("/catalogo/articulos")
+@Produces(MediaType.APPLICATION_JSON)
 public class ArticulosResource {
 	
 	@GET
@@ -66,6 +67,25 @@ public class ArticulosResource {
 		Gson gson = new Gson();
 		String json = gson.toJson(result);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@POST
+	@Path("/modificar")
+	public Response editar(@QueryParam("paramJson") String paramJson)
+			throws JsonParseException, JsonMappingException, IOException, SQLException{
+		Boolean respuesta = null;
+		Articulos articulos  = new Articulos();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			articulos = mapper.readValue(paramJson, Articulos.class);
+		}	
+		ArticulosService articulosService = new ArticulosService();
+		respuesta = articulosService.modificar(articulos);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
+				.build();		
 	}
 
 }

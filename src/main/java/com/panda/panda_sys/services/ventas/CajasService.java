@@ -1,5 +1,7 @@
 package com.panda.panda_sys.services.ventas;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -8,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.panda.panda_sys.model.catalogo.Articulos;
 import com.panda.panda_sys.model.ventas.Cajas;
 import com.panda.panda_sys.model.ventas.CajasMovimientos;
 import com.panda.panda_sys.param.CajaTimbrado;
@@ -132,6 +135,26 @@ public class CajasService extends Conexion{
 			return null;
 		}
 		return cajaTimbrado;
+	}
+	
+	public boolean modificar(Cajas cajas) throws SQLException {
+		Connection c = ObtenerConexion();
+		try {
+			String sql = "update cajas set estado = ? , numero = ? , sucursal = ?, expedicion = ? " 
+					+ "where codigo = ?";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, cajas.getEstado());
+			ps.setString(2, cajas.getNumero());
+			ps.setString(3, cajas.getSucursal());
+			ps.setString(4, cajas.getExpedicion()); 
+			ps.setLong(5, cajas.getCodigo());
+			ps.execute();
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
+		return true;
 	}
 
 }

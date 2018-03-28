@@ -10,10 +10,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.jackson.map.ser.StdSerializers.UtilDateSerializer;
+
 import com.panda.panda_sys.model.personas.Proveedores;
+import com.panda.panda_sys.model.reportes.ReporteParametros;
 import com.panda.panda_sys.model.reportes.Reportes;
+import com.panda.panda_sys.model.ventas.FacturaDetalle;
+import com.panda.panda_sys.param.reportes.ReportesCompuesto;
 import com.panda.panda_sys.services.personas.PersonasService;
 import com.panda.panda_sys.util.Conexion;
+import com.panda.panda_sys.util.Secuencia;
 
 public class ReportesService extends Conexion {
 
@@ -49,6 +55,7 @@ public class ReportesService extends Conexion {
 		List<Reportes> lista = new ArrayList<Reportes>();
 		String sql = "select * from reportes";
 		String conector = null;
+
 		if (reportes.getModulo() != null) {
 			if (sql.contains("where")) {
 				conector = " and ";
@@ -56,6 +63,22 @@ public class ReportesService extends Conexion {
 				conector = " where ";
 			}
 			sql = sql + conector + " modulo like  upper('%" + reportes.getModulo() + "%' ) ";
+		}
+		if (reportes.getPath() != null) {
+			if (sql.contains("where")) {
+				conector = " and ";
+			} else {
+				conector = " where ";
+			}
+			sql = sql + conector + " ( path like ('%" + reportes.getNombre() + "%') )";
+		}
+		if (reportes.getEstado() != null) {
+			if (sql.contains("where")) {
+				conector = " and ";
+			} else {
+				conector = " where ";
+			}
+			sql = sql + conector + " ( estado like ('%" + reportes.getEstado() + "%') )";
 		}
 		if (reportes.getNombre() != null) {
 			if (sql.contains("where")) {
@@ -65,7 +88,6 @@ public class ReportesService extends Conexion {
 			}
 			sql = sql + conector + " ( nombre like ('%" + reportes.getNombre() + "%') )";
 		}
-
 		if (reportes.getDescripcion() != null) {
 			if (sql.contains("where")) {
 				conector = " and ";
@@ -170,5 +192,91 @@ public class ReportesService extends Conexion {
 //		}
 //		return lista;
 //	}
+
+	public boolean insertarReportesCompuestos(ReportesCompuesto reportesCompuesto) throws SQLException {
+		Reportes rep = reportesCompuesto.getReportes();
+		List<ReporteParametros> listaParametros = reportesCompuesto.getListaParametros();
+
+		try {
+			Connection c = ObtenerConexion();
+			c.setAutoCommit(false);
+			Secuencia secuenciaService = new Secuencia();
+			String secuencia = secuenciaService.getSecuencia("reportes_id_seq");
+
+			String sql = "insert into reportes (modulo,path,estado,nombre,descripcion,id) "
+					+ "values ( ? ,?, ? , ? , ? ,?);";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, rep.getModulo());
+			ps.setString(2, rep.getPath());
+			ps.setString(3, rep.getEstado());
+			ps.setString(4, rep.getNombre());
+			ps.setString(5, rep.getDescripcion());
+			ps.setLong(6, Long.parseLong(secuencia));
+			ps.execute();
+
+			if (listaParametros != null) {
+				for (ReporteParametros det : listaParametros) {
+					String sql2 = "insert into reporte_parametros(reporte_id, parametro, estado, tipo_dato)"
+							+ " values(?,?,?,?)";
+					PreparedStatement ps2 = c.prepareStatement(sql2);
+					ps2.setLong(1, Long.parseLong(secuencia));
+					ps2.setString(2, det.getParametro());
+					ps2.setString(3, rep.getEstado());
+					ps2.setString(4, det.getTipoDato());
+					ps2.execute();
+				}
+			}
+
+			c.commit();
+			c.close();
+			return true;
+		} catch (Exception e) {
+			System.out.println("ERROR " + e.getMessage());
+			return false;
+		}
+	}
+	
+	public boolean modificarReportesCompuestos(ReportesCompuesto reportesCompuesto) throws SQLException {
+		Reportes rep = reportesCompuesto.getReportes();
+		List<ReporteParametros> listaParametros = reportesCompuesto.getListaParametros();
+
+		try {
+			Connection c = ObtenerConexion();
+			c.setAutoCommit(false);
+			Secuencia secuenciaService = new Secuencia();
+			String secuencia = secuenciaService.getSecuencia("reportes_id_seq");
+
+			String sql = "insert into reportes (modulo,path,estado,nombre,descripcion,id) "
+					+ "values ( ? ,?, ? , ? , ? ,?);";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, rep.getModulo());
+			ps.setString(2, rep.getPath());
+			ps.setString(3, rep.getEstado());
+			ps.setString(4, rep.getNombre());
+			ps.setString(5, rep.getDescripcion());
+			ps.setLong(6, Long.parseLong(secuencia));
+			ps.execute();
+
+			if (listaParametros != null) {
+				for (ReporteParametros det : listaParametros) {
+					String sql2 = "insert into reporte_parametros(reporte_id, parametro, estado, tipo_dato)"
+							+ " values(?,?,?,?)";
+					PreparedStatement ps2 = c.prepareStatement(sql2);
+					ps2.setLong(1, Long.parseLong(secuencia));
+					ps2.setString(2, det.getParametro());
+					ps2.setString(3, rep.getEstado());
+					ps2.setString(4, det.getTipoDato());
+					ps2.execute();
+				}
+			}
+
+			c.commit();
+			c.close();
+			return true;
+		} catch (Exception e) {
+			System.out.println("ERROR " + e.getMessage());
+			return false;
+		}
+	}
 
 }

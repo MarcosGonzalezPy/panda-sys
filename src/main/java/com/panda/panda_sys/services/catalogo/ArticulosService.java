@@ -1,5 +1,7 @@
 package com.panda.panda_sys.services.catalogo;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -101,6 +103,30 @@ public class ArticulosService extends Conexion{
 		String sql = "delete from articulos where codigo ="+codigo;
 		Statement statement = con.ObtenerConexion().createStatement();
 		statement.execute(sql);	
+		return true;
+	}
+	
+	public boolean modificar(Articulos articulos) throws SQLException {
+		Connection c = ObtenerConexion();
+		try {
+			String sql = "update articulos set codigo_barra = ?, marca = ?, modelo = ?, tipo = ?, descripcion = ?, precio_unitario = ?, grabado= ?, moneda= ?" 
+					+ "where codigo = ?";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, articulos.getCodigoBarra());
+			ps.setString(2, articulos.getMarca());
+			ps.setString(3, articulos.getModelo());
+			ps.setString(4, articulos.getTipo());
+			ps.setString(5, articulos.getDescripcion());
+			ps.setLong(6, Long.parseLong(articulos.getPrecioUnitario()));
+			ps.setLong(7, Long.parseLong(articulos.getGrabado()));
+			ps.setString(8, articulos.getMoneda());
+			ps.setLong(9, Long.parseLong(articulos.getCodigo()));
+			ps.execute();
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
 		return true;
 	}
 
