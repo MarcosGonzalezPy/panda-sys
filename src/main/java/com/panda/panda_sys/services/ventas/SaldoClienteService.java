@@ -23,7 +23,10 @@ public class SaldoClienteService extends Conexion{
 		String sql = " select a.*, b.nombre||' '||b.apellido as nombre from fondo_credito a, personas b "
 				+ " where a.cliente = b.codigo ";
 		if(saldoCliente.getCliente()!= null){
-			sql = sql + " and a.cliente = "+saldoCliente.getCliente()+" ";
+			sql = sql + " and a.cliente ="+saldoCliente.getCliente()+" ";
+		}
+		if(saldoCliente.getNombre()!= null){
+			sql = sql + " and b.nombre||' '||b.apellido  like '%"+saldoCliente.getNombre()+"%' ";
 		}
 		if(saldoCliente.getEstado()!= null){
 			sql = sql + " and a.estado = '"+saldoCliente.getEstado()+"' ";

@@ -26,6 +26,7 @@ import com.panda.panda_sys.model.ventas.Cajas;
 import com.panda.panda_sys.model.ventas.Factura;
 import com.panda.panda_sys.model.ventas.FacturaCabecera;
 import com.panda.panda_sys.model.ventas.FacturaDetalle;
+import com.panda.panda_sys.model.ventas.NotaCredito;
 import com.panda.panda_sys.model.ventas.VentasStockPorSucursal;
 import com.panda.panda_sys.param.inventario.ListaRegistroAjuste;
 import com.panda.panda_sys.param.ventas.RegistrarPago;
@@ -172,6 +173,23 @@ public class VentasResource {
 				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
 				.build();	
 		
+	}
+	
+	@GET
+	@Path("registrar-nota-credito")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response registrarNotaCredito(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException {
+		VentasService ventasService = new VentasService();
+		NotaCredito notaCredito = new NotaCredito();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			notaCredito = mapper.readValue(paramJson, NotaCredito.class);
+		}
+		Boolean result = ventasService.registrarNotaCredito(notaCredito);
+		Gson gson = new Gson();
+		Map<String, Boolean> resultado = ImmutableMap.of("respuesta",result);
+		String json = gson.toJson(resultado);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 
 }
