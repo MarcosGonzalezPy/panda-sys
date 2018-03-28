@@ -61,8 +61,7 @@ public class ClientesService extends Conexion {
 		String sql = " select * from personas p, clientes c  " + " where p.codigo = c.codigo ";
 		if (complexQuery) {
 			if (clientes.getNombre() != null) {
-				sql = sql + " and " + " (p.nombre like  upper('%" + clientes.getNombre()
-						+ "%')  or apellido like  upper('%" + clientes.getNombre() + "%') )";
+				sql = sql + " and " + " (p.nombre || p.apellido like  upper('%" + clientes.getNombre() + "%') )";
 			}
 			if (clientes.getRuc() != null) {
 				sql = sql + " and " + " (p.ruc = '" + clientes.getRuc() + "' ";

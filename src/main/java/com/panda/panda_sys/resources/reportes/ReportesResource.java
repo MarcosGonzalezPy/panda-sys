@@ -138,5 +138,16 @@ public class ReportesResource {
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
 				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
 	}
+	
+//	@GET
+//	@Path("/listar-parametro/{reporteId}")
+//	@Produces(MediaType.APPLICATION_JSON)
+//	public Response listarReportesParametro(@PathParam("reporteId") Long reporteId) {
+//		ReportesService reportesService = new ReportesService();
+//		List<Reportes> respuesta = reportesService.listarReportesParametro(reporteId);
+//		Gson gson = new Gson();
+//		String json = gson.toJson(respuesta);
+//		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+//	}
 
 }

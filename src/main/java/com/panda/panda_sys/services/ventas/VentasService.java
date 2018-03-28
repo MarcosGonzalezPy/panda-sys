@@ -15,6 +15,9 @@ import java.util.Map;
 import com.panda.panda_sys.model.ventas.Factura;
 import com.panda.panda_sys.model.ventas.FacturaCabecera;
 import com.panda.panda_sys.model.ventas.FacturaDetalle;
+import com.panda.panda_sys.model.ventas.NotaCredito;
+import com.panda.panda_sys.model.ventas.NotaCreditoCabecera;
+import com.panda.panda_sys.model.ventas.NotaCreditoDetalle;
 import com.panda.panda_sys.model.ventas.VentasStockPorSucursal;
 import com.panda.panda_sys.param.ventas.FormaPago;
 import com.panda.panda_sys.param.ventas.RegistrarPago;
@@ -507,6 +510,109 @@ public class VentasService extends Conexion {
 			System.out.println("ERROR :"+e.getMessage());
 		}
 		return lista;
+	}
+	
+	public Boolean registrarNotaCredito(NotaCredito notaCredito) throws SQLException{
+		NotaCreditoCabecera ntc = notaCredito.getNotaCreditoCabecera();
+		List<NotaCreditoDetalle> listaNotaCreditoDetalle = notaCredito.getNotaCreditoDetalles();
+		Connection c= ObtenerConexion();
+		try {
+			
+			c.setAutoCommit(false);
+			String sql="Select * from factura_cabecera where numero_factura = ?";
+			PreparedStatement ps =c.prepareStatement(sql);
+			ps.setString(1, ntc.getNumeroFactura());
+			ResultSet rs = ps.executeQuery();
+			FacturaCabecera fc = new FacturaCabecera();
+			while(rs.next()){				
+				fc.setNumeroFactura(rs.getString("numero_factura"));
+				fc.setTimbrado(rs.getString("timbrado"));
+				fc.setCliente(rs.getString("cliente"));
+				fc.setRuc(rs.getString("ruc"));
+				fc.setTelefono(rs.getString("telefono"));
+				fc.setSucursal(rs.getString("sucursal"));
+				fc.setCaja(rs.getInt("caja"));
+				fc.setCondicionCompra(rs.getString("condicion_compra"));
+				fc.setMedioPago(rs.getInt("medio_pago"));
+				fc.setCondicionPago("condicion_pago");
+				fc.setCuotas(rs.getInt("cuotas"));
+				fc.setFecha(rs.getDate("fecha"));
+				fc.setUsuario(rs.getString("usuario"));
+				fc.setEstado(rs.getString("estado"));
+				fc.setCodigoPersona(rs.getInt("codigo_persona"));
+				fc.setCajero(rs.getString("cajero"));
+			}
+			String sql2 = "Insert into nota_credito_cabecera (numero_factura, sucursal, usuario, estado, fecha)"
+					+ " values (?,?,?,?,CURRENT_TIMESTAMP)";
+			PreparedStatement ps2 = c.prepareStatement(sql2);
+			ps2.setString(1, ntc.getNumeroFactura());
+			ps2.setString(2, ntc.getSucursal());
+			ps2.setString(3, ntc.getUsuario());
+			ps2.setString(4, ntc.getEstado());
+			ps2.execute();
+			Long montoCredito=0L;
+			for(NotaCreditoDetalle ntd: listaNotaCreditoDetalle){
+				String sql3="insert into nota_credito_detalle(factura_id, codigo_articulo, cantidad, precio, iva, total, impuesto, tipo)"
+						+ " values(?,?,?,?,?,?,?,?)";
+				PreparedStatement ps3= c.prepareStatement(sql3);
+				ps3.setString(1, fc.getNumeroFactura());
+				ps3.setLong(2, Long.parseLong(ntd.getCodigoArticulo()));
+				ps3.setLong(3, ntd.getCantidad());
+				ps3.setLong(4, ntd.getPrecio());
+				ps3.setLong(5, ntd.getIva());
+				ps3.setLong(6, ntd.getTotal());
+				ps3.setLong(7, ntd.getImpuesto());
+				ps3.setString(8, ntd.getTipo());
+				ps3.execute();
+				
+				String sql4 = "select * from factura_detalle where factura_id = ? and codigo_articulo = ?";
+				PreparedStatement ps4 = c.prepareStatement(sql4);
+				ps4.setString(1, ntc.getNumeroFactura());
+				ps4.setLong(2, Long.parseLong(ntd.getCodigoArticulo()));
+				ResultSet rs4 = ps4.executeQuery();
+				Long cantidadFactura= null;
+				Long montoFactura = 0L;
+				while(rs4.next()){
+					cantidadFactura= rs4.getLong("cantidad");
+					montoFactura = rs4.getLong("total");
+				}
+				if(ntd.getTipo().equals("P")){
+					Long diferenciaCantidad = cantidadFactura-ntd.getCantidad();
+					if(diferenciaCantidad>0){					
+						String sql5 =" update inventario set maximo =maximo+? where codigo = ? and sucursal =? ";
+						PreparedStatement ps5 = c.prepareStatement(sql5);
+						ps5.setLong(1, diferenciaCantidad);
+						ps5.setLong(2, Long.parseLong(ntd.getCodigoArticulo()));
+						ps5.setString(3, ntc.getSucursal());
+						ps5.executeQuery();
+					}
+										
+				}
+				montoCredito = montoCredito + (montoFactura - ntd.getTotal());
+				
+			}
+			String sql6 =" insert into fondo_debito (estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero)"
+				+ "values ('PENDIENTE',CURRENT_TIMESTAMP,  current_date + interval '1 month',?,1,?,?,'NOTACRE',?) ";
+			PreparedStatement ps6 = c.prepareStatement(sql6);
+			ps6.setLong(1, fc.getCodigoPersona());
+			ps6.setLong(2, montoCredito);
+			ps6.setString(3, fc.getSucursal());
+			ps6.setString(4, fc.getNumeroFactura());
+			ps6.execute();
+			
+			String sql7=" update factura_cabecera set estado = 'CON NC' where numero_factura = ?";
+			PreparedStatement ps7 =c.prepareStatement(sql7);
+			ps7.setString(1, ntc.getNumeroFactura());
+			ps7.execute();
+			
+			c.commit();
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			System.out.println("ERROR: "+e.getMessage());
+			return false;
+		}
+		return true;
 	}
 
 }
