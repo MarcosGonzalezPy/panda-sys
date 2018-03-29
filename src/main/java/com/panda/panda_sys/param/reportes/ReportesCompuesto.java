@@ -9,6 +9,15 @@ public class ReportesCompuesto {
 
 	private Reportes reportes;
 	private List<ReporteParametros> listaParametros;
+	private List<ReporteParametros> listaReporteParametrosEliminar;
+
+	public List<ReporteParametros> getListaReporteParametrosEliminar() {
+		return listaReporteParametrosEliminar;
+	}
+
+	public void setListaReporteParametrosEliminar(List<ReporteParametros> listaReporteParametrosEliminar) {
+		this.listaReporteParametrosEliminar = listaReporteParametrosEliminar;
+	}
 
 	public Reportes getReportes() {
 		return reportes;

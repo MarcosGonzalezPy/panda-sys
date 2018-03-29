@@ -166,32 +166,7 @@ public class ReportesService extends Conexion {
 		Statement stmt = con.ObtenerConexion().createStatement();
 		stmt.execute(sql);
 		return true;
-	}
-	
-	
-//	public List<Reportes> listarReportesParametro(Long reporteId) {
-//		List<Reportes> lista = new ArrayList<Reportes>();
-//		try {
-//			Connection c = ObtenerConexion();
-//			String sql = " select * from reportes where modulo = ? ";
-//			PreparedStatement ps = c.prepareStatement(sql);
-//			ps.setString(1, modulo);
-//			ResultSet rs = ps.executeQuery();
-//			while (rs.next()) {
-//				Reportes entidad = new Reportes();
-//				entidad.setId(rs.getLong("id"));
-//				entidad.setModulo(rs.getString("modulo"));
-//				entidad.setPath(rs.getString("path"));
-//				entidad.setEstado(rs.getString("estado"));
-//				entidad.setNombre(rs.getString("nombre"));
-//				entidad.setDescripcion(rs.getString("descripcion"));
-//				lista.add(entidad);
-//			}
-//		} catch (Exception e) {
-//			System.out.println("Error: " + e.getMessage());
-//		}
-//		return lista;
-//	}
+	}	 
 
 	public boolean insertarReportesCompuestos(ReportesCompuesto reportesCompuesto) throws SQLException {
 		Reportes rep = reportesCompuesto.getReportes();
@@ -239,30 +214,42 @@ public class ReportesService extends Conexion {
 	public boolean modificarReportesCompuestos(ReportesCompuesto reportesCompuesto) throws SQLException {
 		Reportes rep = reportesCompuesto.getReportes();
 		List<ReporteParametros> listaParametros = reportesCompuesto.getListaParametros();
-
+		List<ReporteParametros> listaReporteParametrosEliminar = reportesCompuesto.getListaReporteParametrosEliminar();
+		Connection c = ObtenerConexion();
 		try {
-			Connection c = ObtenerConexion();
+			
 			c.setAutoCommit(false);
-			Secuencia secuenciaService = new Secuencia();
-			String secuencia = secuenciaService.getSecuencia("reportes_id_seq");
 
-			String sql = "insert into reportes (modulo,path,estado,nombre,descripcion,id) "
-					+ "values ( ? ,?, ? , ? , ? ,?);";
+			String sql = "update reportes set modulo=?,path=?,estado=?,nombre=?,descripcion=? "
+					+ "where id=?";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setString(1, rep.getModulo());
 			ps.setString(2, rep.getPath());
 			ps.setString(3, rep.getEstado());
 			ps.setString(4, rep.getNombre());
 			ps.setString(5, rep.getDescripcion());
-			ps.setLong(6, Long.parseLong(secuencia));
+			ps.setLong(6, rep.getId());
 			ps.execute();
 
+			if (listaReporteParametrosEliminar != null) {
+				for (ReporteParametros det : listaReporteParametrosEliminar) {
+					if(det.getReporteId()!= null){
+						String sql2 = "delete from reporte_parametros where reporte_id=? and parametro=?";
+						PreparedStatement ps2 = c.prepareStatement(sql2);
+						ps2.setLong(1, det.getReporteId());
+						ps2.setString(2, det.getParametro());
+						
+						ps2.execute();
+					}
+				}
+			}
+			
 			if (listaParametros != null) {
 				for (ReporteParametros det : listaParametros) {
 					String sql2 = "insert into reporte_parametros(reporte_id, parametro, estado, tipo_dato)"
 							+ " values(?,?,?,?)";
 					PreparedStatement ps2 = c.prepareStatement(sql2);
-					ps2.setLong(1, Long.parseLong(secuencia));
+					ps2.setLong(1, rep.getId());
 					ps2.setString(2, det.getParametro());
 					ps2.setString(3, rep.getEstado());
 					ps2.setString(4, det.getTipoDato());
@@ -270,13 +257,64 @@ public class ReportesService extends Conexion {
 				}
 			}
 
+
 			c.commit();
 			c.close();
 			return true;
 		} catch (Exception e) {
+			c.close();
 			System.out.println("ERROR " + e.getMessage());
 			return false;
 		}
 	}
+
+	public List<ReporteParametros> listarReporteParametros(ReporteParametros reporteParametros) throws SQLException {
+		List<ReporteParametros> lista = new ArrayList<ReporteParametros>();
+		String sql = "select * from reporte_parametros";
+		String conector = null;
+
+		if (reporteParametros.getReporteId() != null) {
+			if (sql.contains("where")) {
+				conector = " and ";
+			} else {
+				conector = " where ";
+			}
+			sql = sql + conector + " reporte_id =" + reporteParametros.getReporteId() + " ";
+		}
+		if (reporteParametros.getParametro() != null) {
+			if (sql.contains("where")) {
+				conector = " and ";
+			} else {
+				conector = " where ";
+			}
+			sql = sql + conector + " ( parametro like ('%" + reporteParametros.getParametro() + "%') )";
+		}
+		
+		Statement statement = con.ObtenerConexion().createStatement();
+		rs = statement.executeQuery(sql);
+		while (rs.next()) {
+			ReporteParametros entidad = new ReporteParametros();
+			entidad.setReporteId(rs.getInt("reporte_id"));
+			entidad.setParametro(rs.getString("parametro"));
+			entidad.setEstado(rs.getString("estado"));
+			entidad.setTipoDato(rs.getString("tipo_dato"));
+			lista.add(entidad);
+		}
+
+		return lista;
+	}
+	
+	public boolean eliminarReporteCompuesto(Integer id) throws SQLException {
+		
+		String sql1 = "delete from reporte_parametros where reporte_id = '" + id + "' ";
+		Statement stmt1 = con.ObtenerConexion().createStatement();
+		stmt1.execute(sql1);
+		
+		String sql = "delete from reportes where id = '" + id + "'  ";
+		Statement stmt = con.ObtenerConexion().createStatement();
+		stmt.execute(sql);
+		return true;
+	}
+
 
 }

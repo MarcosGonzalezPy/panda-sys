@@ -2,17 +2,17 @@ package com.panda.panda_sys.model.reportes;
 
 public class ReporteParametros {
 
-	private Integer reporte_id;
+	private Integer reporteId;
 	private String parametro;
 	private String estado;
 	private String tipoDato;
-
-	public Integer getReporte_id() {
-		return reporte_id;
+ 
+	public Integer getReporteId() {
+		return reporteId;
 	}
 
-	public void setReporte_id(Integer reporte_id) {
-		this.reporte_id = reporte_id;
+	public void setReporteId(Integer reporteId) {
+		this.reporteId = reporteId;
 	}
 
 	public String getParametro() {

@@ -19,9 +19,10 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
+import com.panda.panda_sys.model.reportes.ReporteParametros;
 import com.panda.panda_sys.model.reportes.Reportes;
 import com.panda.panda_sys.param.reportes.ReportesCompuesto;
-import com.panda.panda_sys.resources.recursosUtiles.UtilResource;
+import com.panda.panda_sys.services.personas.UsuarioSucursalService;
 import com.panda.panda_sys.services.reportes.ReportesService;
 
 @Path("reportes")
@@ -92,7 +93,7 @@ public class ReportesResource {
 	}
 
 	@POST
-	@Path("/modificarReportesCompuesto")
+	@Path("/modificarReportesCompuestos")
 	public Response editarReportesCompuestos(@QueryParam("paramJson") String paramJson)
 			throws JsonParseException, JsonMappingException, IOException, SQLException {
 		Boolean respuesta = null;
@@ -138,16 +139,35 @@ public class ReportesResource {
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
 				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
 	}
-	
-//	@GET
-//	@Path("/listar-parametro/{reporteId}")
-//	@Produces(MediaType.APPLICATION_JSON)
-//	public Response listarReportesParametro(@PathParam("reporteId") Long reporteId) {
-//		ReportesService reportesService = new ReportesService();
-//		List<Reportes> respuesta = reportesService.listarReportesParametro(reporteId);
-//		Gson gson = new Gson();
-//		String json = gson.toJson(respuesta);
-//		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
-//	}
+
+	@GET
+	@Path("listarReporteParametros")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response listarReporteParametros(@QueryParam("paramJson") String paramJson)
+			throws SQLException, JsonParseException, JsonMappingException, IOException {
+		List<ReporteParametros> lista = new ArrayList<ReporteParametros>();
+		ReporteParametros valor = new ReporteParametros();
+		if (paramJson != null && !paramJson.equals("")) {
+			ObjectMapper mapper = new ObjectMapper();
+			valor = mapper.readValue(paramJson, ReporteParametros.class);
+		}
+		ReportesService reportesService = new ReportesService();
+		lista = reportesService.listarReporteParametros(valor);
+		Gson gson = new Gson();
+		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+
+	@GET
+	@Path("/eliminar-compuesto/{id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response eliminarReporteCompuesto(@PathParam("id") Integer id)
+			throws SQLException {
+		ReportesService reportesService = new ReportesService();
+		boolean result = reportesService.eliminarReporteCompuesto(id);
+		Gson gson = new Gson();
+		String json = gson.toJson(result);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
 
 }
