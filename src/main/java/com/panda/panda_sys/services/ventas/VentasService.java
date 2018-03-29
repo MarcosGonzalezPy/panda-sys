@@ -266,8 +266,9 @@ public class VentasService extends Conexion {
 						} else {
 							montoFraccionadoAplicar = montoFraccionado;
 						}
-						String sql3 = "insert into fondo_credito(estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero)"
-								+ "values('PENDIENTE', current_date, ?,?,?,?,?,'FACTU',?)";
+						String glosaFC = NumberToLetterConverter.convertNumberToLetter(montoFraccionadoAplicar.toString());
+						String sql3 = "insert into fondo_credito(estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero, glosa)"
+								+ "values('PENDIENTE', current_date, ?,?,?,?,?,'FACTU',?,?)";
 						PreparedStatement p3 = c.prepareStatement(sql3);
 						p3.setDate(1, fechaPago);
 						p3.setInt(2, param.getCliente());
@@ -275,12 +276,14 @@ public class VentasService extends Conexion {
 						p3.setLong(4, montoFraccionadoAplicar);
 						p3.setString(5, param.getSucursal());
 						p3.setString(6, param.getNumeroFactura());
+						p3.setString(7, glosaFC);
 						p3.execute();
 					}
 
 				} else {
-					String sql3 = "insert into fondo_credito(estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero)"
-							+ "values('PENDIENTE', current_date, ?,?,?,?,?,'FACTU',?)";
+					String glosaFC = NumberToLetterConverter.convertNumberToLetter(param.getMonto().toString());
+					String sql3 = "insert into fondo_credito(estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero, glosa)"
+							+ "values('PENDIENTE', current_date, ?,?,?,?,?,'FACTU',?,?)";
 					PreparedStatement p3 = c.prepareStatement(sql3);
 					p3.setDate(1, fechaPago);
 					p3.setInt(2, param.getCliente());
@@ -288,6 +291,7 @@ public class VentasService extends Conexion {
 					p3.setLong(4, param.getMonto());
 					p3.setString(5, param.getSucursal());
 					p3.setString(6, param.getNumeroFactura());
+					p3.setString(7, glosaFC);
 					p3.execute();
 				}
 				// Actualizar las cabeceras cuando es una compra a creadito

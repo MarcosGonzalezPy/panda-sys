@@ -84,9 +84,9 @@ public class NumberToLetterConverter {
                 + String.valueOf(getDigitAt(splitNumber[0], 7))
                 + String.valueOf(getDigitAt(splitNumber[0], 6)));
         if (millon == 1)
-            converted.append("**UN MILLON ");
+            converted.append("UN MILLON ");
         else if (millon > 1)
-            converted.append("**")
+            converted.append("")
                     .append(convertNumber(String.valueOf(millon)))
                     .append("MILLONES ");
 
@@ -104,10 +104,10 @@ public class NumberToLetterConverter {
                         .append("MIL ");
         }else{
             if (miles == 1)
-                converted.append("**UN MIL ");
+                converted.append("UN MIL ");
 
             if (miles > 1)
-                converted.append("**")
+                converted.append("")
                         .append(convertNumber(String.valueOf(miles)))
                         .append("MIL ");
         }
@@ -122,22 +122,22 @@ public class NumberToLetterConverter {
             converted.append(convertNumber(String.valueOf(cientos)));
         }else{
             if (cientos == 1)
-                converted.append("**UN ");
+                converted.append("UN ");
             if (cientos > 1)
-                converted.append("**").append(convertNumber(String.valueOf(cientos)));
+                converted.append("").append(convertNumber(String.valueOf(cientos)));
         }
 
         if (millon + miles + cientos == 0)
-            converted.append("**CERO ");
+            converted.append("CERO ");
 
        // Descompone los centavos
-       String valor = splitNumber[1];
-       if(valor.length()==1){
-           converted.append(splitNumber[1]).append("0").append("/100 ");
-       }else{
-          converted.append(splitNumber[1]).append("/100 "); 
-       }
-        converted.append("U.S. DOLARES**");
+//       String valor = splitNumber[1];
+//       if(valor.length()==1){
+//           converted.append(splitNumber[1]).append("0").append("/100 ");
+//       }else{
+//          converted.append(splitNumber[1]).append("/100 "); 
+//       }
+//        converted.append("U.S. DOLARES**");
         return converted.toString();
     }
 
