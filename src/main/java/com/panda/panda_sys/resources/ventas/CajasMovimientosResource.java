@@ -48,7 +48,7 @@ public class CajasMovimientosResource {
 			ObjectMapper mapper = new ObjectMapper();
 			cajasMovimientos = mapper.readValue(paramJson, CajasMovimientos.class);
 		}	
-		boolean result = cajasMovimientosService.insertar(cajasMovimientos);
+		String result = cajasMovimientosService.insertar(cajasMovimientos);
 		Gson gson = new Gson();
 		String json = gson.toJson(result);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*")

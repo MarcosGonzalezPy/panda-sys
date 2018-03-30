@@ -11,6 +11,7 @@ import java.util.Map;
 import com.panda.panda_sys.model.ventas.Cajas;
 import com.panda.panda_sys.model.ventas.CajasMovimientos;
 import com.panda.panda_sys.util.Conexion;
+import com.panda.panda_sys.util.PandaException;
 
 public class CajasMovimientosService extends Conexion{	
 	
@@ -18,16 +19,20 @@ public class CajasMovimientosService extends Conexion{
     Map<String, String> resultado = new HashMap<String, String>();
     ResultSet rs = null;
 	
-	public boolean insertar(CajasMovimientos cajasMovimientos) throws SQLException{
+	public String insertar(CajasMovimientos cajasMovimientos) throws SQLException{
 		try {
+			if(cajasMovimientos.getUsuario().equals("gmarcos")){
+				throw new PandaException("El usuario ya extite");
+			}			
 			String sql = "insert into cajas_movimientos (estado,codigo_caja,usuario,monto_apertura, usuario_creacion, fecha_apertura)"
 				+ "values (upper('"+cajasMovimientos.getEstado()+"'),"+cajasMovimientos.getCodigoCaja()+" , "
 				+ " '"+cajasMovimientos.getUsuario()+"', "+cajasMovimientos.getMontoApertura()+", " + " '"+cajasMovimientos.getUsuarioCreacion()+"', current_date);";
 			Statement statement = con.ObtenerConexion().createStatement();
+			
 			statement.execute(sql);	
-			return true;
-		} catch (Exception e) {
-			return false;
+			return "S";
+		} catch (Exception e) {			
+			return e.getMessage().toString();
 		}		
 	}
 	

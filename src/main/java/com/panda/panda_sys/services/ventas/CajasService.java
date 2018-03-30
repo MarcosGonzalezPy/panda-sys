@@ -127,7 +127,7 @@ public class CajasService extends Conexion{
 			Statement statement = con.ObtenerConexion().createStatement();
 			rs = statement.executeQuery(sql);
 			while(rs.next()){
-				cajaTimbrado.setCaja(rs.getString("codigo_caja"));
+				cajaTimbrado.setCaja(rs.getString("codigo"));
 				cajaTimbrado.setSucursal(rs.getString("sucursal"));
 				cajaTimbrado.setTimbrado(rs.getString("expedicion"));
 			}
