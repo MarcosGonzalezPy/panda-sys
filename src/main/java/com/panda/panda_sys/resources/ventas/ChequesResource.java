@@ -70,13 +70,13 @@ public class ChequesResource {
 	public Response editar(@QueryParam("paramJson") String paramJson)
 			throws JsonParseException, JsonMappingException, IOException, SQLException {
 		Boolean respuesta = null;
-		Clientes clientes = new Clientes();
+		Cheques cheques = new Cheques();
 		if (paramJson != null && !paramJson.equals("") && !paramJson.equals("{}")) {
 			ObjectMapper mapper = new ObjectMapper();
-			clientes = mapper.readValue(paramJson, Clientes.class);
+			cheques = mapper.readValue(paramJson, Cheques.class);
 		}
-		ClientesService clientesService = new ClientesService();
-		respuesta = clientesService.modificar(clientes);
+		ChequesService chequesService = new ChequesService();
+		respuesta = chequesService.modificar(cheques);
 		Gson gson = new Gson();
 		String json = gson.toJson(respuesta);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
