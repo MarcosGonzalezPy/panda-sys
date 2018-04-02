@@ -6,12 +6,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.sql.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.panda.panda_sys.model.Cheques;
 import com.panda.panda_sys.util.Conexion;
+import com.panda.panda_sys.util.Secuencia;
 
 public class ChequesService extends Conexion {
 
@@ -77,7 +79,8 @@ public class ChequesService extends Conexion {
 			}
 			sql = sql + conector + " fecha = ('" + cheque.getFecha() + "') ";
 		}
-
+		
+		sql += " order by estado desc ";
 		Statement statement = con.ObtenerConexion().createStatement();
 		rs = statement.executeQuery(sql);
 		while (rs.next()) {
@@ -142,6 +145,43 @@ public class ChequesService extends Conexion {
 		String sql = "delete from cheques where codigo =" + codigo;
 		Statement statement = con.ObtenerConexion().createStatement();
 		statement.execute(sql);
+		return true;
+	}
+
+	public boolean modificarEstadoDeCheques(List<Cheques> listaCheques) throws SQLException {
+		Connection c = ObtenerConexion();
+
+		try {
+			for (Cheques lista : listaCheques) {
+				c.setAutoCommit(false);
+				String sql = "update cheques set estado='COBRADO' where codigo = ?";
+				PreparedStatement ps = c.prepareStatement(sql);
+				ps.setInt(1, lista.getCodigo());
+				ps.execute();
+
+				/* Inserta en la tabla Fondos */
+				Secuencia secuencia = new Secuencia();
+				String secuenciaFondo = secuencia.getSecuencia("fondo_seq");
+
+				
+				String sql2 = "insert into fondo (codigo, monto, tipo, estado, fecha, documento, numero_documento) "
+						+ "values (?,?,?,?,current_date,?,?);";
+
+				PreparedStatement ps2 = c.prepareStatement(sql2);
+				ps2.setInt(1, Integer.parseInt(secuenciaFondo));
+				ps2.setInt(2, lista.getMonto());
+				ps2.setString(3, "EFECTIVO");
+				ps2.setString(4, "ACTIVO");
+				ps2.setString(5, "CHEQUE");
+				ps2.setString(6, String.valueOf(lista.getNumeroCheque()));
+				ps2.execute();
+				c.commit();
+				c.close();
+			}
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
 		return true;
 	}
 

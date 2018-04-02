@@ -20,8 +20,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.Cheques;
-import com.panda.panda_sys.model.personas.Clientes;
-import com.panda.panda_sys.services.personas.ClientesService;
+import com.panda.panda_sys.param.ventas.ChequesParam;
 import com.panda.panda_sys.services.ventas.ChequesService;
 
 @Path("ventas/cheque")
@@ -57,7 +56,7 @@ public class ChequesResource {
 			ObjectMapper mapper = new ObjectMapper();
 			cheques = mapper.readValue(paramJson, Cheques.class);
 		}
-		boolean result =chequesService.insertar(cheques);
+		boolean result = chequesService.insertar(cheques);
 		Gson gson = new Gson();
 		String json = gson.toJson(result);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
@@ -91,6 +90,24 @@ public class ChequesResource {
 		boolean result = chequeService.eliminar(codigo);
 		Gson gson = new Gson();
 		String json = gson.toJson(result);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
+	}
+
+	@POST
+	@Path("/modificar-lista")
+	public Response modificarEstadoDeCheques(@QueryParam("paramJson") String paramJson)
+			throws JsonParseException, JsonMappingException, IOException, SQLException {
+		Boolean respuesta = null;
+		ChequesParam chequesParam = new ChequesParam();
+		if (paramJson != null && !paramJson.equals("")) {
+			ObjectMapper mapper = new ObjectMapper();
+			chequesParam = mapper.readValue(paramJson, ChequesParam.class);
+		}
+		ChequesService chequesService = new ChequesService();
+		respuesta = chequesService.modificarEstadoDeCheques(chequesParam.getListaCheques());
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
 				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
 	}
