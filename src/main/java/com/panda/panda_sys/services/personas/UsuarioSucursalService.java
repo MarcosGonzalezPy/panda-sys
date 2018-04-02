@@ -21,32 +21,6 @@ public class UsuarioSucursalService extends Conexion {
 	ResultSet rs = null;
 
 	public List<UsuarioSucursal> listarUsuarioSucursal(UsuarioSucursal usuarioSucursal) throws SQLException {
-		// List<UsuarioSucursal> lista = new ArrayList<UsuarioSucursal>();
-		// String sql = " select * from usuario_sucursal ";
-		//
-		// if (usuarioSucursal.getUsuario() != null) {
-		// sql = sql + " where usuario = '" + usuarioSucursal.getUsuario() + "'
-		// ";
-		// }
-		// if (usuarioSucursal.getSucursal() != null) {
-		// String conector = null;
-		// if (sql.contains("where")) {
-		// conector = " and ";
-		// } else {
-		// conector = " where ";
-		// }
-		// sql = sql + conector + " sucursal = '" +
-		// usuarioSucursal.getSucursal() + "' ";
-		// }
-		// Statement statement = con.ObtenerConexion().createStatement();
-		// rs = statement.executeQuery(sql);
-		// while (rs.next()) {
-		// UsuarioSucursal entidad = new UsuarioSucursal();
-		// entidad.setUsuario(rs.getString("usuario"));
-		// entidad.setSucursal(rs.getString("sucursal"));
-		// lista.add(entidad);
-		// }
-		// return lista;
 
 		List<UsuarioSucursal> lista = new ArrayList<UsuarioSucursal>();
 		String sql = " select * from usuario_sucursal ";

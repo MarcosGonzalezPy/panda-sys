@@ -107,8 +107,8 @@ public class CajasService extends Conexion{
 	
 	public boolean insertar(Cajas cajas) throws SQLException{
 		try {
-			String sql = "insert into cajas (codigo,estado,numero, sucursal,expedicion)"
-					+ "values ("+cajas.getCodigo()+",upper('"+cajas.getEstado()+"'), upper('"+cajas.getNumero()+"'),"
+			String sql = "insert into cajas (estado,numero, sucursal,expedicion)"
+					+ "values (upper('"+cajas.getEstado()+"'), upper('"+cajas.getNumero()+"'),"
 							+ " upper('"+cajas.getSucursal()+"'), upper('"+cajas.getExpedicion()+"'));";
 			Statement statement = con.ObtenerConexion().createStatement();
 			statement.execute(sql);	
