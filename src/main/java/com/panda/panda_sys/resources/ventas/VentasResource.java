@@ -21,6 +21,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
+import com.panda.panda_sys.model.FondoDebito;
 import com.panda.panda_sys.model.inventario.InventarioParam;
 import com.panda.panda_sys.model.ventas.Cajas;
 import com.panda.panda_sys.model.ventas.Factura;
@@ -189,6 +190,23 @@ public class VentasResource {
 		Gson gson = new Gson();
 		Map<String, Boolean> resultado = ImmutableMap.of("respuesta",result);
 		String json = gson.toJson(resultado);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("listar-fondo-debito")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response listarFondoDebito(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException {
+		List<FondoDebito> lista = new ArrayList<FondoDebito>();
+		VentasService ventasService = new VentasService();
+		FondoDebito fondoDebito = new FondoDebito();
+		if(paramJson!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			fondoDebito = mapper.readValue(paramJson, FondoDebito.class);
+		}
+		lista = ventasService.listarFondoDebito(fondoDebito);
+		Gson gson = new Gson();
+		String json = gson.toJson(lista);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 

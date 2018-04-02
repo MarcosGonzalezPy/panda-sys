@@ -14,7 +14,28 @@ public class FondoDebito {
 	private String sucursal;
 	private Date fechaPago;
 	private Integer dias;
+	private String documento;
+	private Long documentoNumero;
+	private String glosa;
 	
+	public String getDocumento() {
+		return documento;
+	}
+	public void setDocumento(String documento) {
+		this.documento = documento;
+	}
+	public Long getDocumentoNumero() {
+		return documentoNumero;
+	}
+	public void setDocumentoNumero(Long documentoNumero) {
+		this.documentoNumero = documentoNumero;
+	}
+	public String getGlosa() {
+		return glosa;
+	}
+	public void setGlosa(String glosa) {
+		this.glosa = glosa;
+	}
 	public Integer getCodigo() {
 		return codigo;
 	}
@@ -75,5 +96,4 @@ public class FondoDebito {
 	public void setDias(Integer dias) {
 		this.dias = dias;
 	}
-
 }
