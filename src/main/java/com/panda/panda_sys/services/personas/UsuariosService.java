@@ -13,6 +13,7 @@ import java.util.Map;
 import com.panda.panda_sys.model.personas.Accesos;
 import com.panda.panda_sys.model.personas.UsuarioSucursal;
 import com.panda.panda_sys.model.personas.Usuarios;
+import com.panda.panda_sys.param.UsuariosParam;
 import com.panda.panda_sys.util.Conexion;
 
 public class UsuariosService extends Conexion {
@@ -194,26 +195,26 @@ public class UsuariosService extends Conexion {
 		}
 		return lista;
 	}
-	
-	public Accesos login(String usuario, String pass) throws SQLException{
-		String sql = "select * from usuarios where usuario ='"+usuario+"' and contrasenha= '"+pass+"'";
+
+	public Accesos login(String usuario, String pass) throws SQLException {
+		String sql = "select * from usuarios where usuario ='" + usuario + "' and contrasenha= '" + pass + "'";
 		Statement statement = con.ObtenerConexion().createStatement();
 		rs = statement.executeQuery(sql);
 		Accesos entidad = null;
-        while(rs.next()){
-        	entidad = new Accesos();
-        	entidad.setUsuario(rs.getString("usuario"));
-        	entidad.setContrasenha(rs.getString("contrasenha"));
-        	entidad.setContrasenha(rs.getString("resetear"));
-        	entidad.setRol(rs.getString("rol"));
-        }
-        String sql2 = "select * from roles where rol = '"+entidad.getRol()+"'";
-        ResultSet rs2 = statement.executeQuery(sql2);
-        List<String> modulos = new ArrayList<String>();
-        while(rs2.next()){
-        	modulos.add(rs2.getString("modulo"));
-        }
-        entidad.setModulos(modulos);
+		while (rs.next()) {
+			entidad = new Accesos();
+			entidad.setUsuario(rs.getString("usuario"));
+			entidad.setContrasenha(rs.getString("contrasenha"));
+			entidad.setContrasenha(rs.getString("resetear"));
+			entidad.setRol(rs.getString("rol"));
+		}
+		String sql2 = "select * from roles where rol = '" + entidad.getRol() + "'";
+		ResultSet rs2 = statement.executeQuery(sql2);
+		List<String> modulos = new ArrayList<String>();
+		while (rs2.next()) {
+			modulos.add(rs2.getString("modulo"));
+		}
+		entidad.setModulos(modulos);
 		return entidad;
 	}
 
@@ -242,4 +243,56 @@ public class UsuariosService extends Conexion {
 		return true;
 	}
 
+	public List<Usuarios> listarPorUsuarios(String usuario) throws SQLException {
+		List<Usuarios> lista = new ArrayList<Usuarios>();
+		String sql = " select * from usuarios ";
+		if (usuario != null) {
+			String conector = null;
+			if (sql.contains("where")) {
+				conector = " and ";
+			} else {
+				conector = " where ";
+			}
+			sql = sql + conector + " usuario = '" + usuario + "' ";
+		}
+
+		Statement statement = con.ObtenerConexion().createStatement();
+		rs = statement.executeQuery(sql);
+		while (rs.next()) {
+			Usuarios entidad = new Usuarios();
+			entidad.setCodigo(rs.getString("codigo"));
+			entidad.setUsuario(rs.getString("usuario"));
+			entidad.setContrasenha(rs.getString("contrasenha"));
+			entidad.setRol(rs.getString("rol"));
+			lista.add(entidad);
+		}
+
+		return lista;
+	}
+
+	public boolean cambiarPassword(UsuariosParam usuariosParam) throws SQLException {
+		Connection c = ObtenerConexion();
+		try {
+			List<Usuarios> listaUsuarios = listarPorUsuarios(usuariosParam.getUsuario());
+
+			if (listaUsuarios.get(0).getContrasenha().equals(usuariosParam.getAnteriorPassword())) {
+
+				String sql = "update usuarios set  contrasenha=  ?  where usuario = ?";
+
+				PreparedStatement ps = c.prepareStatement(sql);
+				ps.setString(1, usuariosParam.getNuevoPassword());
+				ps.setString(2, usuariosParam.getUsuario());
+				ps.execute();
+
+				c.close();
+			}else{
+				return false;
+			}
+
+			return true;
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
+	}
 }
