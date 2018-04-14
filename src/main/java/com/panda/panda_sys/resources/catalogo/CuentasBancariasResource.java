@@ -20,12 +20,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.catalogo.CuentasBancarias;
-import com.panda.panda_sys.model.catalogo.Servicios;
-import com.panda.panda_sys.model.personas.UsuarioSucursal;
-import com.panda.panda_sys.param.CuentasBancariasParam;
 import com.panda.panda_sys.services.catalogo.CuentasBancariasService;
-import com.panda.panda_sys.services.personas.UsuariosService;
-import com.panda.panda_sys.services.servicios.ServiciosService;
 
 @Path("/catalogo/cuentas-bancarias")
 public class CuentasBancariasResource {
@@ -36,7 +31,7 @@ public class CuentasBancariasResource {
 			throws SQLException, JsonParseException, JsonMappingException, IOException {
 		List<CuentasBancarias> lista = new ArrayList<CuentasBancarias>();
 		CuentasBancarias valor = new CuentasBancarias();
-		if (paramJson != null && !paramJson.equals("")) {
+		if (paramJson != null && !paramJson.equals("") && !paramJson.equals("{}")) {
 			ObjectMapper mapper = new ObjectMapper();
 			valor = mapper.readValue(paramJson, CuentasBancarias.class);
 		}
