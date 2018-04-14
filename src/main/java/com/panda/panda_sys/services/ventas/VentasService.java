@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.panda.panda_sys.model.FondoDebito;
 import com.panda.panda_sys.model.ventas.Factura;
 import com.panda.panda_sys.model.ventas.FacturaCabecera;
 import com.panda.panda_sys.model.ventas.FacturaDetalle;
@@ -231,7 +232,7 @@ public class VentasService extends Conexion {
 						+ "caja= ?,condicion_compra=?, medio_pago=?, cuotas=?, cajero=? , glosa=? where numero_factura= ?";
 				PreparedStatement p2 = c.prepareStatement(sql2);
 				p2.setString(1, param.getTimbrado());
-				p2.setString(2, param.getCaja());
+				p2.setLong(2, Long.parseLong(param.getCaja()));
 				p2.setString(3, param.getCondicionCompra());
 				p2.setLong(4, codigoMedioPago);
 				p2.setInt(5, (param.getCuotas() == null) ? 0 : param.getCuotas());
@@ -628,6 +629,59 @@ public class VentasService extends Conexion {
 			return false;
 		}
 		return true;
+	}
+	
+	public List<FondoDebito> listarFondoDebito(FondoDebito fondoDebito) throws SQLException{
+		List<FondoDebito> lista = new ArrayList<FondoDebito>();
+		Connection c = ObtenerConexion();
+		int numeroParametro = 0;
+		try {
+			String sql = "select * from fondo_debito ";
+			if(fondoDebito.getEstado()!= null && !fondoDebito.getEstado().equals("")){
+				sql += " where estado = ?";
+			}
+			if(fondoDebito.getCliente()!= null && ! fondoDebito.getEstado().equals("")){
+				String conector = null;
+				if(sql.contains("where")){
+					conector = " and ";
+				}else{
+					conector = " where ";
+				}
+				sql += conector + " cliente= ? ";
+			}
+			PreparedStatement ps= c.prepareStatement(sql);
+			if(fondoDebito.getEstado()!= null && !fondoDebito.getEstado().equals("")){
+				numeroParametro++;
+				ps.setString(numeroParametro, fondoDebito.getEstado());
+			}
+			if(fondoDebito.getCliente()!= null && ! fondoDebito.getEstado().equals("")){
+				numeroParametro++;
+				ps.setLong(numeroParametro, fondoDebito.getCliente());
+			}
+			
+			ResultSet rs = ps.executeQuery();
+			while(rs.next()){
+				FondoDebito entidad = new FondoDebito();
+				entidad.setCliente(rs.getInt("cliente"));
+				entidad.setCodigo(rs.getInt("codigo"));
+				entidad.setDias(rs.getInt("dias"));
+				entidad.setDocumento(rs.getString("documento"));
+				entidad.setDocumentoNumero(rs.getLong("documento_numero"));
+				entidad.setEstado(rs.getString("estado"));
+				entidad.setFecha(rs.getDate("fecha"));
+				entidad.setFechaPago(rs.getDate("fecha_pago"));
+				entidad.setFechaVencimiento(rs.getDate("fecha_vencimiento"));
+				entidad.setGlosa(rs.getString("glosa"));
+				entidad.setMonto(rs.getInt("monto"));
+				entidad.setNumero(rs.getString("numero"));
+				entidad.setSucursal(rs.getString("sucursal"));
+				lista.add(entidad);
+			}
+			c.close();
+		} catch (Exception e) {
+			c.close();
+		}
+		return lista;
 	}
 
 }
