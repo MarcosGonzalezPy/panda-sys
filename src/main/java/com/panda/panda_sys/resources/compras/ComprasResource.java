@@ -64,11 +64,16 @@ public class ComprasResource {
 	}
 	
 	@GET
-	@Path("/delete/{codigo}")
+	@Path("/anular")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response eliminar(@PathParam("codigo") int codigo) throws SQLException {		
+	public Response anular(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException {		
 		ComprasService comprasService = new ComprasService();
-		boolean result = comprasService.eliminar(codigo);
+		OrdenCompraCabecera param = new OrdenCompraCabecera();
+		if(paramJson!= null && !paramJson.equals("")){
+			ObjectMapper mapper = new ObjectMapper();
+			param = mapper.readValue(paramJson, OrdenCompraCabecera.class);
+		}
+		boolean result = comprasService.anular(param.getCodigo(), param.getEstado(), param.getSucursal());
 		Gson gson = new Gson();
 		String json = gson.toJson(result);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
@@ -96,8 +101,10 @@ public class ComprasResource {
 			ObjectMapper mapper = new ObjectMapper();
 			param = mapper.readValue(paramJson, RegistroCompra.class);
 		}
-		comprasService.recepcionCompra(param);
-		return Response.ok().header("Access-Control-Allow-Origin", "*").build();
+		Boolean respuesta = comprasService.recepcionCompra(param);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 
 }

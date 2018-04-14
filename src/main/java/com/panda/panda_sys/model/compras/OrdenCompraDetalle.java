@@ -4,7 +4,7 @@ public class OrdenCompraDetalle {
 	
 	private int codigo;	
 	private int codigoArticulo;
-	private int cantidad;
+	private int cantidad;	
 	private int iva;
 	
 	public int getCodigo() {

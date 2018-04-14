@@ -1,6 +1,6 @@
 package com.panda.panda_sys.model.compras;
 
-import java.util.Date;
+import java.sql.Date;
 
 public class RegistroCompraCabecera {
 	
@@ -12,7 +12,21 @@ public class RegistroCompraCabecera {
 	private Date fechaEntrega;
 	private Date fecha;
 	private String usuario;
+	private String glosa;
+	private Long proveedorCodigo;
 	
+	public Long getProveedorCodigo() {
+		return proveedorCodigo;
+	}
+	public void setProveedorCodigo(Long proveedorCodigo) {
+		this.proveedorCodigo = proveedorCodigo;
+	}
+	public String getGlosa() {
+		return glosa;
+	}
+	public void setGlosa(String glosa) {
+		this.glosa = glosa;
+	}
 	public Integer getId() {
 		return id;
 	}

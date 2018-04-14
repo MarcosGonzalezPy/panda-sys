@@ -13,7 +13,14 @@ public class OrdenCompraCabecera {
 	private Date fechaCreacion;
 	private String usuario;
 	private String estado;
+	private Long proveedorCodigo;
 	
+	public Long getProveedorCodigo() {
+		return proveedorCodigo;
+	}
+	public void setProveedorCodigo(Long proveedorCodigo) {
+		this.proveedorCodigo = proveedorCodigo;
+	}
 	public String getEstado() {
 		return estado;
 	}

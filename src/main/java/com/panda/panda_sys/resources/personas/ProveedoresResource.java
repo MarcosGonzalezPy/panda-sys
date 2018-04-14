@@ -43,6 +43,21 @@ public class ProveedoresResource {
 		String json = gson.toJson(lista);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
+	
+	@GET
+	@Path("listar")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response listarSinParametros()
+			throws SQLException, JsonParseException, JsonMappingException, IOException {
+		List<Proveedores> lista = new ArrayList<Proveedores>();
+		ProveedoresService proveedoresService = new ProveedoresService();
+		Proveedores param = new Proveedores();
+		lista = proveedoresService.listar(param, false);
+		Gson gson = new Gson();
+		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+
 
 	@POST
 	@Path("/insertar")

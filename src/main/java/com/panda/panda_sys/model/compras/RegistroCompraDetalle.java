@@ -7,7 +7,21 @@ public class RegistroCompraDetalle {
 	private Integer cantidad;
 	private Long precio;
 	private Integer iva;
+	private Long total;
+	private Long impuesto;
 	
+	public Long getTotal() {
+		return total;
+	}
+	public void setTotal(Long total) {
+		this.total = total;
+	}
+	public Long getImpuesto() {
+		return impuesto;
+	}
+	public void setImpuesto(Long impuesto) {
+		this.impuesto = impuesto;
+	}
 	public Integer getId() {
 		return id;
 	}

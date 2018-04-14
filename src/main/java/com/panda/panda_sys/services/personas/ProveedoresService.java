@@ -37,7 +37,9 @@ public class ProveedoresService extends Conexion {
 			}
 
 		} else {
-			sql = sql + " and " + " p.nombre like  upper('%" + personas.getNombre() + "%' ) ";
+			if (personas.getNombre() != null) {
+				sql = sql + " and " + " p.nombre like  upper('%" + personas.getNombre() + "%' ) ";
+			}
 		}
 		if (personas.getRepresentanteNombre() != null) {
 			sql = sql + " and " + " (pr.representante_nombre like  upper('%" + personas.getRepresentanteNombre()
