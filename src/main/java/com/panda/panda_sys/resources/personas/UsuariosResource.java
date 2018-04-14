@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import com.panda.panda_sys.model.personas.Accesos;
 import com.panda.panda_sys.model.personas.UsuarioSucursal;
 import com.panda.panda_sys.model.personas.Usuarios;
+import com.panda.panda_sys.param.UsuariosParam;
 import com.panda.panda_sys.services.personas.AccesosService;
 import com.panda.panda_sys.services.personas.UsuariosService;
 
@@ -102,17 +103,16 @@ public class UsuariosResource {
 		String json = gson.toJson(lista);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
-	
+
 	@GET
 	@Path("accesos/{usuario}/{pass}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response acceder(@PathParam("usuario") String usuario,
-			@PathParam("pass") String pass) throws SQLException {
+	public Response acceder(@PathParam("usuario") String usuario, @PathParam("pass") String pass) throws SQLException {
 		Accesos accesos = new Accesos();
 		UsuariosService usuariosService = new UsuariosService();
-		accesos= usuariosService.login(usuario, pass);
+		accesos = usuariosService.login(usuario, pass);
 		Gson gson = new Gson();
-		String json = gson.toJson(accesos);	
+		String json = gson.toJson(accesos);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 
@@ -143,6 +143,24 @@ public class UsuariosResource {
 		boolean result = usuariosService.eliminar(codigo);
 		Gson gson = new Gson();
 		String json = gson.toJson(result);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
+	}
+
+	@POST
+	@Path("/cambiar-password")
+	public Response cambiarPassword(@QueryParam("paramJson") String paramJson)
+			throws JsonParseException, JsonMappingException, IOException, SQLException {
+		Boolean respuesta = null;
+		UsuariosParam usuariosParam = new UsuariosParam();
+		UsuariosService usuariosService = new UsuariosService();
+		if (paramJson != null && !paramJson.equals("") && !paramJson.equals("{}")) {
+			ObjectMapper mapper = new ObjectMapper();
+			usuariosParam = mapper.readValue(paramJson, UsuariosParam.class);
+		}
+		respuesta = usuariosService.cambiarPassword(usuariosParam);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*")
 				.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
 	}

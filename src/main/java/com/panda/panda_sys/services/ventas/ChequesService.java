@@ -6,13 +6,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.sql.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.panda.panda_sys.model.Cheques;
 import com.panda.panda_sys.util.Conexion;
+import com.panda.panda_sys.util.NumberToLetterConverter;
 import com.panda.panda_sys.util.Secuencia;
 
 public class ChequesService extends Conexion {
@@ -79,18 +79,22 @@ public class ChequesService extends Conexion {
 			}
 			sql = sql + conector + " fecha = ('" + cheque.getFecha() + "') ";
 		}
-		
+
 		sql += " order by estado desc ";
 		Statement statement = con.ObtenerConexion().createStatement();
 		rs = statement.executeQuery(sql);
 		while (rs.next()) {
 			Cheques entidad = new Cheques();
+
+			String glosa = NumberToLetterConverter.convertNumberToLetter(rs.getString("monto"));
+			
 			entidad.setCodigo(rs.getInt("codigo"));
 			entidad.setMonto(rs.getInt("monto"));
 			entidad.setNumeroCheque(rs.getInt("numero_cheque"));
 			entidad.setEstado(rs.getString("estado"));
 			entidad.setBanco(rs.getString("banco"));
 			entidad.setFecha(rs.getDate("fecha"));
+			entidad.setGlosa(glosa);
 			lista.add(entidad);
 		}
 		return lista;
@@ -100,13 +104,17 @@ public class ChequesService extends Conexion {
 		Connection c = ObtenerConexion();
 		try {
 			c.setAutoCommit(false);
-			String sql = "insert into cheques (monto,numero_cheque,estado,banco,fecha) " + "values (?,?,?,?,?);";
+			String glosa = NumberToLetterConverter.convertNumberToLetter(cheques.getMonto());
+
+			String sql = "insert into cheques (monto,numero_cheque,estado,banco,fecha,glosa) "
+					+ "values (?,?,?,?,?,?);";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setInt(1, cheques.getMonto());
 			ps.setInt(2, cheques.getNumeroCheque());
 			ps.setString(3, cheques.getEstado());
 			ps.setString(4, cheques.getBanco());
 			ps.setDate(5, cheques.getFecha());
+			ps.setString(6, glosa);
 			ps.execute();
 
 			c.commit();
@@ -122,7 +130,10 @@ public class ChequesService extends Conexion {
 	public boolean modificar(Cheques cheques) throws SQLException {
 		Connection c = ObtenerConexion();
 		try {
-			String sql = "update cheques set " + "monto=?,numero_cheque=?,estado=?,banco=?,fecha=?"
+
+			String glosa = NumberToLetterConverter.convertNumberToLetter(cheques.getMonto());
+			
+			String sql = "update cheques set " + "monto=?,numero_cheque=?,estado=?,banco=?,fecha=?,glosa=?"
 					+ "where codigo = ?";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setInt(1, cheques.getMonto());
@@ -130,7 +141,8 @@ public class ChequesService extends Conexion {
 			ps.setString(3, cheques.getEstado());
 			ps.setString(4, cheques.getBanco());
 			ps.setDate(5, cheques.getFecha());
-			ps.setInt(6, cheques.getCodigo());
+			ps.setString(6, glosa);
+			ps.setInt(7, cheques.getCodigo());
 			ps.execute();
 
 			c.close();
@@ -163,7 +175,6 @@ public class ChequesService extends Conexion {
 				Secuencia secuencia = new Secuencia();
 				String secuenciaFondo = secuencia.getSecuencia("fondo_seq");
 
-				
 				String sql2 = "insert into fondo (codigo, monto, tipo, estado, fecha, documento, numero_documento) "
 						+ "values (?,?,?,?,current_date,?,?);";
 
