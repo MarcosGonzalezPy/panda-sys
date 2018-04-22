@@ -15,6 +15,21 @@ public class SaldoCliente {
 	private Date fechaPago;
 	private Integer dias;
 	private String nombre;
+	private String documento;
+	private String documentoNumero;
+	
+	public String getDocumento() {
+		return documento;
+	}
+	public void setDocumento(String documento) {
+		this.documento = documento;
+	}
+	public String getDocumentoNumero() {
+		return documentoNumero;
+	}
+	public void setDocumentoNumero(String documentoNumero) {
+		this.documentoNumero = documentoNumero;
+	}
 	
 	public String getNombre() {
 		return nombre;

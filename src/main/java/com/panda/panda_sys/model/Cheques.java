@@ -11,6 +11,51 @@ public class Cheques {
 	private String banco;
 	private Date fecha;
 	private String glosa;
+	private Long codigoPersona;
+	private String nombreApellido;
+	private String tipo;
+	private String documento;
+	private String documentoNumero;
+	
+	public String getDocumento() {
+		return documento;
+	}
+
+	public void setDocumento(String documento) {
+		this.documento = documento;
+	}
+
+	public String getDocumentoNumero() {
+		return documentoNumero;
+	}
+
+	public void setDocumentoNumero(String documentoNumero) {
+		this.documentoNumero = documentoNumero;
+	}
+
+	public Long getCodigoPersona() {
+		return codigoPersona;
+	}
+
+	public void setCodigoPersona(Long codigoPersona) {
+		this.codigoPersona = codigoPersona;
+	}
+
+	public String getNombreApellido() {
+		return nombreApellido;
+	}
+
+	public void setNombreApellido(String nombreApellido) {
+		this.nombreApellido = nombreApellido;
+	}
+
+	public String getTipo() {
+		return tipo;
+	}
+
+	public void setTipo(String tipo) {
+		this.tipo = tipo;
+	}
 
 	public Integer getCodigo() {
 		return codigo;

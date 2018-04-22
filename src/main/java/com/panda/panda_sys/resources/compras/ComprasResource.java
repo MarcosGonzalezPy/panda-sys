@@ -12,20 +12,19 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
+import com.panda.panda_sys.model.compras.NotaDebito;
 import com.panda.panda_sys.model.compras.OrdenCompra;
 import com.panda.panda_sys.model.compras.OrdenCompraCabecera;
 import com.panda.panda_sys.model.compras.RegistroCompra;
-import com.panda.panda_sys.model.inventario.InventarioParam;
 import com.panda.panda_sys.param.compras.OrdenCompraDetalleParam;
-import com.panda.panda_sys.param.inventario.ListaRegistroInventarioParam;
-import com.panda.panda_sys.services.catalogo.DominiosService;
+import com.panda.panda_sys.param.compras.RegistroCompraDetalleParam;
 import com.panda.panda_sys.services.compras.ComprasService;
-import com.panda.panda_sys.services.inventario.InventarioService;
 
 
 @Path("/compras")
@@ -42,8 +41,10 @@ public class ComprasResource {
 			ObjectMapper mapper = new ObjectMapper();
 			param = mapper.readValue(paramJson, OrdenCompra.class);
 		}
-		comprasService.insertar(param);
-		return Response.ok().header("Access-Control-Allow-Origin", "*").build();
+		Boolean respuesta = comprasService.insertar(param);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 	
 	@GET
@@ -102,6 +103,34 @@ public class ComprasResource {
 			param = mapper.readValue(paramJson, RegistroCompra.class);
 		}
 		Boolean respuesta = comprasService.recepcionCompra(param);
+		Gson gson = new Gson();
+		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("/listar-detalle-registro/{codigo}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response listarDetalleRegistro(@PathParam("codigo") Integer codigo) throws SQLException, JsonParseException, JsonMappingException, IOException {
+		List<RegistroCompraDetalleParam> lista = new ArrayList<RegistroCompraDetalleParam>();
+		ComprasService comprasService = new ComprasService();
+		lista = comprasService.listarRegistroCompraDetalle(codigo);
+		Gson gson = new Gson();
+		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("/registrarn-nota-debito")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response registrarNotaDebito(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, IOException {
+		ComprasService comprasService = new ComprasService();
+		NotaDebito param = new NotaDebito();
+		if(paramJson!= null && !paramJson.equals("")){
+			ObjectMapper mapper = new ObjectMapper();
+			param = mapper.readValue(paramJson, NotaDebito.class);
+		}
+		Boolean respuesta = comprasService.registrarNotaDebito(param);
 		Gson gson = new Gson();
 		String json = gson.toJson(respuesta);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();

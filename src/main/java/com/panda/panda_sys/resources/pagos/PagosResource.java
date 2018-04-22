@@ -1,4 +1,4 @@
-package com.panda.panda_sys.resources.ventas;
+package com.panda.panda_sys.resources.pagos;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -17,23 +18,23 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.ventas.SaldoCliente;
-import com.panda.panda_sys.services.ventas.SaldoClienteService;
+import com.panda.panda_sys.services.pagos.PagosService;
 
-@Path("/saldo-cliente/")
-public class SaldoClienteResource {
+@Path("/pagos/")
+public class PagosResource {
 	
 	@GET
-	@Path("listar")
+	@Path("listar/{tipo}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response listar(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, IOException {
+	public Response listar(@QueryParam("paramJson") String paramJson, @PathParam("tipo") String tipo) throws SQLException, JsonParseException, IOException {
 		List<SaldoCliente> lista = new ArrayList<SaldoCliente>();
-		SaldoClienteService service  = new SaldoClienteService();
+		PagosService service  = new PagosService();
 		SaldoCliente saldoCliente = new SaldoCliente();
 		if(paramJson!= null && !paramJson.equals("") && !paramJson.equals("{}")){
 			ObjectMapper mapper = new ObjectMapper();
 			saldoCliente = mapper.readValue(paramJson, SaldoCliente.class);
 		}	
-		lista = service.listar(saldoCliente);
+		lista = service.listar(saldoCliente, tipo);
 		Gson gson = new Gson();
 		String json = gson.toJson(lista);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();

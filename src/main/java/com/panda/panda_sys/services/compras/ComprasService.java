@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.panda.panda_sys.model.compras.NotaDebito;
+import com.panda.panda_sys.model.compras.NotaDebitoCabecera;
+import com.panda.panda_sys.model.compras.NotaDebitoDetalle;
 import com.panda.panda_sys.model.compras.OrdenCompra;
 import com.panda.panda_sys.model.compras.OrdenCompraCabecera;
 import com.panda.panda_sys.model.compras.OrdenCompraDetalle;
@@ -23,8 +26,10 @@ import com.panda.panda_sys.model.inventario.RegistroInventario;
 import com.panda.panda_sys.model.personas.Usuarios;
 import com.panda.panda_sys.param.RolesParam;
 import com.panda.panda_sys.param.compras.OrdenCompraDetalleParam;
+import com.panda.panda_sys.param.compras.RegistroCompraDetalleParam;
 import com.panda.panda_sys.util.Conexion;
 import com.panda.panda_sys.util.NumberToLetterConverter;
+import com.panda.panda_sys.util.Secuencia;
 
 public class ComprasService extends Conexion {
 
@@ -33,19 +38,38 @@ public class ComprasService extends Conexion {
 	ResultSet rs = null;
 	
 	public boolean insertar(OrdenCompra ordenCompra) throws SQLException {
-		OrdenCompraCabecera cabecera = ordenCompra.getCabecera();
+		OrdenCompraCabecera ca= ordenCompra.getCabecera();
 		List<OrdenCompraDetalle> listaDetalle= ordenCompra.getDetalle();
-		String sql=" insert into orden_compra_cabecera(codigo, sucursal, proveedor, condicion_compra, plazos, fecha_entrega, fecha_creacion, usuario, estado, proveedor_codigo) "
-				+ " values ("+cabecera.getCodigo()+", '"+cabecera.getSucursal()+"', '"+cabecera.getProveedor()+"', '"+cabecera.getCondicionCompra()+"',"
-						+"  '"+cabecera.getPlazos()+"', '"+cabecera.getFechaEntrega()+"', current_date , '"+cabecera.getUsuario()+"', 'ACTIVO', "+cabecera.getProveedorCodigo()+")";
-		Statement stmt = con.ObtenerConexion().createStatement();
-		stmt.execute(sql);
-		for(OrdenCompraDetalle detalle: listaDetalle){
-			String sql2= " insert into orden_compra_detalle(codigo, codigo_articulo, cantidad, iva) values ("
-					+ " "+cabecera.getCodigo()+", "+detalle.getCodigoArticulo()+", "+detalle.getCantidad()+", "+detalle.getIva()+") ";
-			Statement stmt1 =con.ObtenerConexion().createStatement();
-			stmt1.execute(sql2);
-		}		
+		Connection c = ObtenerConexion();
+		try {
+			c.setAutoCommit(false);
+			String sql1 = "insert into orden_compra_cabecera(codigo, sucursal, proveedor, fecha_creacion, fecha_entrega, usuario, estado, proveedor_codigo)"
+					+ "values (?,?,?,current_timestamp,?,?,?,?)";
+			PreparedStatement ps1= c.prepareStatement(sql1);
+			ps1.setLong(1, ca.getCodigo());
+			ps1.setString(2, ca.getSucursal());
+			ps1.setString(3, ca.getProveedor());
+			ps1.setDate(4, ca.getFechaEntrega());
+			ps1.setString(5, ca.getUsuario());
+			ps1.setString(6, "ACTIVO");
+			ps1.setLong(7, ca.getProveedorCodigo());
+			ps1.execute();
+			
+			for(OrdenCompraDetalle detalle: listaDetalle){
+				String sql2= " insert into orden_compra_detalle(codigo, codigo_articulo, cantidad, iva) values (?,?,?,?)";
+				PreparedStatement ps2 = c.prepareStatement(sql2);
+				ps2.setLong(1, ca.getCodigo());
+				ps2.setLong(2, detalle.getCodigoArticulo());
+				ps2.setLong(3, detalle.getCantidad());
+				ps2.setLong(4, detalle.getIva());
+				ps2.execute();
+			}					
+			c.commit();
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			return false;
+		}
 		return true;
 	}
 	
@@ -146,7 +170,7 @@ public class ComprasService extends Conexion {
 							+ " and sucursal = ?";
 					PreparedStatement ps4 = c.prepareStatement(sql4);
 					ps4.setLong(1, entidad.getCantidad());
-					ps4.setLong(2, codigo);
+					ps4.setLong(2, entidad.getCodigoArticulo());
 					ps4.setString(3, sucursal);
 					ps4.execute();					
 				}
@@ -279,4 +303,140 @@ public class ComprasService extends Conexion {
 		}
 		return true;
 	}
+	
+	public List<RegistroCompraDetalleParam> listarRegistroCompraDetalle(Integer codigo) throws SQLException{
+		List<RegistroCompraDetalleParam> lista = new ArrayList<RegistroCompraDetalleParam>();
+		Connection c = ObtenerConexion();
+		try {
+			String sql =" select rcd.*, a.descripcion from registro_compra_detalle rcd, articulos a where a.codigo = rcd.codigo_articulo  and rcd.id = ?";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setLong(1, codigo);
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				RegistroCompraDetalleParam entidad = new RegistroCompraDetalleParam();
+				entidad.setId(rs.getInt("id"));
+				entidad.setCodigoArticulo(rs.getInt("codigo_articulo"));
+				entidad.setCantidad(rs.getInt("cantidad"));
+				entidad.setPrecio(rs.getLong("precio"));
+				entidad.setIva(rs.getInt("iva"));
+				entidad.setTotal(rs.getLong("total"));
+				entidad.setImpuesto(rs.getLong("impuesto"));
+				entidad.setDescripcion(rs.getString("descripcion"));
+				
+				lista.add(entidad);
+			}
+		} catch (Exception e) {
+			System.out.println("Error: "+e.getMessage());
+		}		
+		return lista;		
+	}
+	
+	public Boolean registrarNotaDebito(NotaDebito notaDebito) throws SQLException{
+		NotaDebitoCabecera cabecera = notaDebito.getCabecera();
+		List<NotaDebitoDetalle> detalle = notaDebito.getDetalle();
+		Connection c= ObtenerConexion();
+		try {
+			c.setAutoCommit(false);
+			String sql = "select * from registro_compra_cabecera where id = ?";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setLong(1,cabecera.getNumeroRegistroCompra());
+			ResultSet rs= ps.executeQuery();
+			RegistroCompraCabecera rcc = new RegistroCompraCabecera();
+			while(rs.next()){				
+				rcc.setId(rs.getInt("id"));
+				rcc.setCondicionCompra(rs.getString("condicion_compra"));
+				rcc.setPlazo(rs.getString("plazo"));
+				rcc.setProveedor(rs.getString("proveedor"));
+				rcc.setSucursal(rs.getString("sucursal"));
+				rcc.setFechaEntrega(rs.getDate("fecha_entrega"));
+				rcc.setFecha(rs.getDate("fecha"));
+				rcc.setUsuario(rs.getString("usuario"));
+				rcc.setEstado(rs.getString("estado"));
+				rcc.setProveedorCodigo(rs.getLong("proveedor_codigo"));
+			}
+			Secuencia secuencia= new Secuencia();
+			Long montoTotal = 0l;
+			for(NotaDebitoDetalle entidad: detalle){
+				montoTotal+=entidad.getTotal();
+			}
+			Long sec = Long.parseLong(secuencia.getSecuencia("nota_debito_cabecera_id_seq"));
+			String glosa = NumberToLetterConverter.convertNumberToLetter(montoTotal);
+			String sql2 = "insert into nota_debito_cabecera"
+				+ "(id,numero_registro_compra,sucursal,usuario,estado,fecha,glosa)"
+				+ " values (?,?,?,?,'ACTIVO', current_timestamp,?)";
+			PreparedStatement ps2= c.prepareStatement(sql2);
+			ps2.setLong(1, sec);
+			ps2.setLong(2, rcc.getId());
+			ps2.setString(3, rcc.getSucursal());
+			ps2.setString(4, cabecera.getUsuario());
+			ps2.setString(5, glosa);
+			ps2.execute();
+			
+			for(NotaDebitoDetalle entidadDetalle: detalle){
+				String sql3="insert into nota_debito_detalle(numero_registro_compra,codigo_articulo,"
+					+ "cantidad,precio,iva,total,impuesto,tipo)"
+					+ " values (?,?,?,?,?,?,?,?)";
+				PreparedStatement ps3 =c.prepareStatement(sql3);
+				ps3.setLong(1, sec);
+				ps3.setLong(2, entidadDetalle.getCodigoArticulo());
+				ps3.setLong(3, entidadDetalle.getCantidad());
+				ps3.setLong(4, entidadDetalle.getPrecio());
+				ps3.setLong(5, entidadDetalle.getIva());
+				ps3.setLong(6, entidadDetalle.getTotal());
+				ps3.setLong(7, entidadDetalle.getImpuesto());
+				ps3.setString(8, entidadDetalle.getTipo());
+				ps3.execute();	
+				
+				String sql4= "select * from registro_compra_detalle where id=?"
+						+ " and codigo_articulo=?";
+				PreparedStatement ps4 = c.prepareStatement(sql4);
+				ps4.setLong(1, rcc.getId());
+				ps4.setLong(2, entidadDetalle.getCodigoArticulo());
+				ResultSet rs4 = ps4.executeQuery();
+				Long cantidadCompra = 0L;
+				while(rs4.next()){
+					cantidadCompra = rs4.getLong("cantidad");
+				}
+				if(cantidadCompra> entidadDetalle.getCantidad()){
+					Long diferencia = cantidadCompra-entidadDetalle.getCantidad();
+					String sql5 = "update inventario set cantidad = cantidad-? where codigo=?"
+							+ " and sucursal=?";
+					PreparedStatement ps5= c.prepareStatement(sql5);
+					ps5.setLong(1,diferencia);
+					ps5.setLong(2, entidadDetalle.getCodigoArticulo());
+					ps5.setString(3, rcc.getSucursal());
+					ps5.execute();					
+				}
+			}
+			String sql7=" update registro_compra_cabecera set estado = 'CON ND' where id = ?";
+			PreparedStatement ps7 =c.prepareStatement(sql7);
+			ps7.setLong(1, cabecera.getNumeroRegistroCompra());
+			ps7.execute();
+			
+			String sql8 = "update orden_compra_cabecera set estado='CON ND' where codigo = ?";
+			PreparedStatement ps8= c.prepareStatement(sql8);
+			ps8.setLong(1, cabecera.getNumeroRegistroCompra());
+			ps8.execute();
+			
+			String sql9 =" insert into fondo_credito (estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero, glosa)"
+					+ "values ('PENDIENTE',CURRENT_TIMESTAMP,  current_date + interval '1 month',?,1,?,?,'NOTADEB',?,?) ";
+			PreparedStatement ps9 = c.prepareStatement(sql9);
+			ps9.setLong(1, rcc.getProveedorCodigo());
+			ps9.setLong(2, montoTotal);
+			ps9.setString(3, rcc.getSucursal());
+			ps9.setLong(4, cabecera.getNumeroRegistroCompra());
+			ps9.setString(5, glosa);
+			ps9.execute();
+			
+			c.commit();
+			c.close();
+		} catch (Exception e) {
+			System.out.println("Error al registrar nota de debito."+e.getMessage());
+			c.close();
+			return false;
+		}
+		return true;
+	}
+	
+	
 }

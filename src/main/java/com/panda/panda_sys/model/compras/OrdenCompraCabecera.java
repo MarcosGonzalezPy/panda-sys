@@ -1,6 +1,6 @@
 package com.panda.panda_sys.model.compras;
 
-import java.util.Date;
+import java.sql.Date;
 
 public class OrdenCompraCabecera {
 	

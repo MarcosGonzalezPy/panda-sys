@@ -13,8 +13,15 @@ public class RegistroCompraCabecera {
 	private Date fecha;
 	private String usuario;
 	private String glosa;
+	private String estado;
 	private Long proveedorCodigo;
 	
+	public String getEstado() {
+		return estado;
+	}
+	public void setEstado(String estado) {
+		this.estado = estado;
+	}	
 	public Long getProveedorCodigo() {
 		return proveedorCodigo;
 	}

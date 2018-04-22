@@ -22,7 +22,7 @@ public class ProveedoresService extends Conexion {
 
 	public List<Proveedores> listar(Proveedores personas, boolean complexQuery) throws SQLException {
 		List<Proveedores> lista = new ArrayList<Proveedores>();
-		String sql = " select * from personas p, proveedores pr  " + " where p.codigo = pr.codigo ";
+		String sql = " select *, pr.representante_nombre from personas p, proveedores pr  " + " where p.codigo = pr.codigo ";
 		if (complexQuery) {
 			if (personas.getNombre() != null) {
 				sql = sql + " and " + " (p.nombre like  upper('%" + personas.getNombre()
