@@ -14,8 +14,9 @@ public class Cheques {
 	private Long codigoPersona;
 	private String nombreApellido;
 	private String tipo;
+	private String cuentaBancaria;
 	private String documento;
-	private String documentoNumero;
+	private Long documentoNumero;
 	
 	public String getDocumento() {
 		return documento;
@@ -25,12 +26,22 @@ public class Cheques {
 		this.documento = documento;
 	}
 
-	public String getDocumentoNumero() {
+	public Long getDocumentoNumero() {
 		return documentoNumero;
 	}
 
-	public void setDocumentoNumero(String documentoNumero) {
+	public void setDocumentoNumero(Long documentoNumero) {
 		this.documentoNumero = documentoNumero;
+	}
+
+
+
+	public String getCuentaBancaria() {
+		return cuentaBancaria;
+	}
+
+	public void setCuentaBancaria(String cuentaBancaria) {
+		this.cuentaBancaria = cuentaBancaria;
 	}
 
 	public Long getCodigoPersona() {

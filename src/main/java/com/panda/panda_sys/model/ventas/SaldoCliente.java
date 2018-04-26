@@ -17,7 +17,14 @@ public class SaldoCliente {
 	private String nombre;
 	private String documento;
 	private String documentoNumero;
+	private Long codigoPersona;
 	
+	public Long getCodigoPersona() {
+		return codigoPersona;
+	}
+	public void setCodigoPersona(Long codigoPersona) {
+		this.codigoPersona = codigoPersona;
+	}
 	public String getDocumento() {
 		return documento;
 	}
