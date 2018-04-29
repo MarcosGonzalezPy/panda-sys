@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -20,6 +21,8 @@ import com.google.gson.Gson;
 import com.panda.panda_sys.model.Cheques;
 import com.panda.panda_sys.model.ventas.SaldoCliente;
 import com.panda.panda_sys.services.pagos.PagosService;
+
+import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 @Path("/pagos/")
 public class PagosResource {
@@ -53,7 +56,8 @@ public class PagosResource {
 		}	
 		String respuesta = service.generarCheque(cheque, usuario);
 		Gson gson = new Gson();
-		String json = gson.toJson(respuesta);
+		Map<String, String> resultado = ImmutableMap.of("respuesta",respuesta);
+		String json = gson.toJson(resultado);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 	

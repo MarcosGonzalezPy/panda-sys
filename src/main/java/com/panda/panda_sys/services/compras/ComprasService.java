@@ -5,7 +5,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,11 +19,6 @@ import com.panda.panda_sys.model.compras.OrdenCompraDetalle;
 import com.panda.panda_sys.model.compras.RegistroCompra;
 import com.panda.panda_sys.model.compras.RegistroCompraCabecera;
 import com.panda.panda_sys.model.compras.RegistroCompraDetalle;
-import com.panda.panda_sys.model.inventario.Inventario;
-import com.panda.panda_sys.model.inventario.InventarioParam;
-import com.panda.panda_sys.model.inventario.RegistroInventario;
-import com.panda.panda_sys.model.personas.Usuarios;
-import com.panda.panda_sys.param.RolesParam;
 import com.panda.panda_sys.param.compras.OrdenCompraDetalleParam;
 import com.panda.panda_sys.param.compras.RegistroCompraDetalleParam;
 import com.panda.panda_sys.util.Conexion;
@@ -68,6 +62,7 @@ public class ComprasService extends Conexion {
 			c.close();
 		} catch (Exception e) {
 			c.close();
+			System.out.println("PANDA ERROR: "+e.getMessage());
 			return false;
 		}
 		return true;

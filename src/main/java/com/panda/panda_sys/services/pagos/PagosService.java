@@ -1,6 +1,7 @@
 package com.panda.panda_sys.services.pagos;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -96,35 +97,39 @@ public class PagosService extends Conexion{
 			Secuencia secuencia= new Secuencia();
 			Long sec = Long.parseLong(secuencia.getSecuencia("nota_debito_cabecera_id_seq"));
 			String sql2 = "insert into cheques (monto,numero_cheque,estado,banco,fecha,glosa,codigo_persona,"
-				+ "nombre_apellido,tipo,codigo, documento, documento_numero) values "
-				+ "(?,?,'RETIRADO',?,current_timestamp,?,?,?,'EMITIDO',?,?,?)";
+				+ "nombre_apellido,codigo, documento, documento_numero,tipo) values "
+				+ "(?,?,?,?,current_timestamp,?,?,?,?,?,?,?)";
 			PreparedStatement ps2 = c.prepareStatement(sql2);
 			ps2.setLong(1, cheque.getMonto());
 			ps2.setLong(2, cheque.getNumeroCheque());
+			ps2.setString(3, "RETIRADO");
+			ps2.setString(4, cheque.getBanco());
+			//ps2.setDate(5, new Date(System.currentTimeMillis()));
 			String glosa = NumberToLetterConverter.convertNumberToLetter(cheque.getMonto()); 
-			ps2.setString(3, glosa);
-			ps2.setLong(4, cheque.getCodigoPersona());
-			ps2.setString(5, cheque.getNombreApellido());
-			ps2.setLong(6, sec);
-			ps2.setString(7, cheque.getDocumento());
-			ps2.setLong(8, cheque.getDocumentoNumero());
+			ps2.setString(5, glosa);
+			ps2.setLong(6, cheque.getCodigoPersona());
+			ps2.setString(7, cheque.getNombreApellido());
+			ps2.setLong(8, sec);
+			ps2.setString(9, cheque.getDocumento());
+			ps2.setLong(10, cheque.getDocumentoNumero());
+			ps2.setString(11, "EMITIDO");
 			ps2.execute();
 							
 			String sql1 ="update fondo_debito set estado = 'PAGADO', salida_documento='CHEQUE', salida_documento_numero=? where documento=? and documento_numero=? ";
 			PreparedStatement ps1 = c.prepareStatement(sql1);
-			ps1.setString(1, cheque.getDocumento());
-			ps1.setLong(2, cheque.getDocumentoNumero());
-			ps1.setLong(3, sec);				
+			ps1.setLong(1, sec);
+			ps1.setString(2, cheque.getDocumento());
+			ps1.setLong(3, cheque.getDocumentoNumero());							
 			ps1.execute();		
 								
-			String sql3 = "update cuenta_bancaria set cantidad=cantidad-? where banco=? and numero=?";
+			String sql3 = "update cuenta_bancaria set fondo=fondo-? where banco=? and numero=?";
 			PreparedStatement ps3 = c.prepareStatement(sql3);
 			ps3.setLong(1, cheque.getMonto());
 			ps3.setString(2, cheque.getBanco());
 			ps3.setString(3, cheque.getCuentaBancaria());
 			ps3.execute();
 			
-			String sql4 = "insert into movimientos_cuenta_bancario(estado, codigo_cuenta_bancaria,fecha,usuario,monto,documento,numero_documento,tipo, documento, documento_numero)"
+			String sql4 = "insert into movimientos_cuenta_bancaria(estado, codigo_cuenta_bancaria,fecha,usuario,monto, tipo,documento,numero_documento)"
 				+ "values('ACTIVO',?,current_timestamp,?,?,?,?,?)";
 			PreparedStatement ps4= c.prepareStatement(sql4);
 			ps4.setString(1,cheque.getCuentaBancaria());
@@ -132,7 +137,15 @@ public class PagosService extends Conexion{
 			ps4.setLong(3, cheque.getMonto());
 			ps4.setString(4, "EMISION");
 			ps4.setString(5, cheque.getDocumento());
-			ps4.setLong(6, cheque.getDocumentoNumero());
+			ps4.setLong(6, cheque.getDocumentoNumero());			
+			ps4.execute();
+			
+			String sql5 = "update numeros_cheque set estado = 'USADO' where numero=? and banco =?" ;
+			PreparedStatement ps5 = c.prepareStatement(sql5);
+			ps5.setLong(1, cheque.getNumeroCheque());
+			ps5.setString(2, cheque.getBanco());
+			ps5.execute();
+			
 			c.commit();
 			c.close();
 		} catch (Exception e) {
