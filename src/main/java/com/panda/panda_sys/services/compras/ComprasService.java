@@ -1,11 +1,13 @@
 package com.panda.panda_sys.services.compras;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,9 +18,6 @@ import com.panda.panda_sys.model.compras.NotaDebitoDetalle;
 import com.panda.panda_sys.model.compras.OrdenCompra;
 import com.panda.panda_sys.model.compras.OrdenCompraCabecera;
 import com.panda.panda_sys.model.compras.OrdenCompraDetalle;
-import com.panda.panda_sys.model.compras.RegistroCompra;
-import com.panda.panda_sys.model.compras.RegistroCompraCabecera;
-import com.panda.panda_sys.model.compras.RegistroCompraDetalle;
 import com.panda.panda_sys.param.compras.OrdenCompraDetalleParam;
 import com.panda.panda_sys.param.compras.RegistroCompraDetalleParam;
 import com.panda.panda_sys.util.Conexion;
@@ -71,7 +70,7 @@ public class ComprasService extends Conexion {
 	public List<OrdenCompraCabecera> listarOrdenCompra(OrdenCompraCabecera param) throws SQLException {
 		List<OrdenCompraCabecera> lista = new ArrayList<OrdenCompraCabecera>();
 
-		String sql = " select  codigo, sucursal,  proveedor,  condicion_compra, plazos,  fecha_entrega ,fecha_creacion,  usuario, estado, proveedor_codigo from orden_compra_cabecera ";
+		String sql = " select  codigo, sucursal,  proveedor,  condicion_compra, plazo,  fecha_entrega ,fecha_creacion,  usuario, estado, proveedor_codigo from orden_compra_cabecera ";
 
 		if (param.getEstado() != null) {
 			String conector = null;
@@ -118,7 +117,7 @@ public class ComprasService extends Conexion {
 			entidad.setSucursal(rs.getString("sucursal"));
 			entidad.setProveedor(rs.getString("proveedor"));
 			entidad.setCondicionCompra(rs.getString("condicion_compra"));
-			entidad.setPlazos(rs.getString("plazos"));
+			entidad.setPlazo(rs.getInt("plazo"));
 			entidad.setFechaEntrega(rs.getDate("fecha_entrega"));
 			entidad.setFechaCreacion(rs.getDate("fecha_creacion"));
 			entidad.setUsuario(rs.getString("usuario"));
@@ -142,25 +141,21 @@ public class ComprasService extends Conexion {
 			ps.execute();
 
 			if(!estado.equals("PENDIENTE")){
-				String sql2 ="update registro_compra_cabecera set estado = 'ANULADO' where id =?";
-				PreparedStatement ps2 = c.prepareStatement(sql2);
-				ps2.setInt(1, codigo);
-				ps2.execute();
 				
-				String sql3 ="select * from registro_compra_detalle where id = ?";
+				String sql3 ="select * from orden_compra_detalle where codigo = ?";
 				PreparedStatement ps3 = c.prepareStatement(sql3);
 				ps3.setInt(1, codigo);
 				ResultSet rs3 = ps3.executeQuery();
-				List<RegistroCompraDetalle> listaRegistroCompraDetalle = new ArrayList<>();
+				List<OrdenCompraDetalle> listaRegistroCompraDetalle = new ArrayList<>();
 				while(rs3.next()){
-					RegistroCompraDetalle entidad= new RegistroCompraDetalle();
+					OrdenCompraDetalle entidad= new OrdenCompraDetalle();
 					entidad.setCantidad(rs3.getInt("cantidad"));
 					entidad.setCodigoArticulo(rs3.getInt("codigo_articulo"));
 					entidad.setIva(rs3.getInt("iva"));
 					entidad.setPrecio(rs3.getLong("precio"));
 					listaRegistroCompraDetalle.add(entidad);
 				}
-				for(RegistroCompraDetalle entidad: listaRegistroCompraDetalle){
+				for(OrdenCompraDetalle entidad: listaRegistroCompraDetalle){
 					String sql4 = "update inventario set cantidad = cantidad-? where codigo = ?"
 							+ " and sucursal = ?";
 					PreparedStatement ps4 = c.prepareStatement(sql4);
@@ -172,10 +167,8 @@ public class ComprasService extends Conexion {
 				String sql5= "update fondo_debito set estado = 'ANULADO' where "
 					+ "documento = 'COMPRA' and documento_numero = ?";
 				PreparedStatement ps5 = c.prepareStatement(sql5);
-				ps5.setString(1, codigo.toString());
-				ps5.execute();
-				
-
+				ps5.setLong(1, codigo);
+				ps5.execute();				
 			}
 			c.commit();
 			c.close();
@@ -207,44 +200,38 @@ public class ComprasService extends Conexion {
 		
 	}
 	
-	public boolean recepcionCompra(RegistroCompra registroCompra) throws SQLException {
-		RegistroCompraCabecera cabecera = registroCompra.getCabecera();
-		List<RegistroCompraDetalle> listaDetalle = registroCompra.getDetalle();		
+	public boolean recepcionCompra(OrdenCompra ordenCompra) throws SQLException {
+		OrdenCompraCabecera cabecera = ordenCompra.getCabecera();
+		List<OrdenCompraDetalle> listaDetalle = ordenCompra.getDetalle();		
 		Connection c = ObtenerConexion();
 		try {
 			c.setAutoCommit(false);
 			
 			Long montoTotal = 0L;
-			String sql = "insert into registro_compra_cabecera (id, condicion_compra, plazo, proveedor, sucursal, fecha_entrega, fecha, usuario, estado)"
-				+ " values (?,?,?,?,?,?, current_date,?,'INGRESADO')";
+			String sql = "update orden_compra_cabecera set condicion_compra=?, plazo=?,estado='RECEPCIONADO',"
+					+ " numero_factura=?, fecha_recepcion=current_date, timbrado =?, usuario_recepcion=?, ruc=? where codigo =?  ";
 			PreparedStatement ps = c.prepareStatement(sql);
-			ps.setLong(1, cabecera.getId());
-			ps.setString(2, cabecera.getCondicionCompra());
-			ps.setString(3, cabecera.getPlazo());
-			ps.setString(4, cabecera.getProveedor());
-			ps.setString(5,cabecera.getSucursal());
-			ps.setDate(6, cabecera.getFechaEntrega());
-			ps.setString(7, cabecera.getUsuario());
+			ps.setString(1, cabecera.getCondicionCompra());
+			ps.setLong(2, cabecera.getPlazo()==null? 0: cabecera.getPlazo());
+			ps.setLong(3, cabecera.getNumeroFactura());
+			ps.setLong(4, cabecera.getTimbrado());
+			ps.setString(5, cabecera.getUsuarioRecepcion());
+			ps.setString(6, cabecera.getRuc());
+			ps.setLong(7, cabecera.getCodigo());
 			ps.execute();
-			for(RegistroCompraDetalle detalle: listaDetalle){				
-				String sql2 = "insert into registro_compra_detalle (id, codigo_articulo, cantidad, precio, iva, total, impuesto) "
-						+ " values (?,?,?,?,?,?,?) ";
+			
+			for(OrdenCompraDetalle detalle: listaDetalle){				
+				String sql2 = "update orden_compra_detalle  set cantidad=?, precio=?, iva=?, total=?,  impuesto=? "
+						+ " where codigo=? and codigo_articulo=? ";
 				PreparedStatement ps2 = c.prepareStatement(sql2);
-				ps2.setLong(1, cabecera.getId());
-				ps2.setLong(2, detalle.getCodigoArticulo());
-				ps2.setLong(3, detalle.getCantidad());
-				ps2.setLong(4, detalle.getPrecio());
-				ps2.setLong(5, detalle.getIva());
-				Long total = detalle.getCantidad() * detalle.getPrecio();
-				montoTotal +=total;
-				ps2.setLong(6, total);
-				Long impuesto = null;
-				if(detalle.getIva().equals(5)){
-					impuesto = total /21;
-				}else{
-					impuesto = total /11; 
-				}				
-				ps2.setLong(7, impuesto);
+				ps2.setLong(1, detalle.getCantidad());
+				ps2.setLong(2, detalle.getPrecio());
+				ps2.setLong(3, detalle.getIva());
+				ps2.setLong(4, detalle.getTotal());
+				ps2.setLong(5, detalle.getImpuesto());
+				ps2.setLong(6, cabecera.getCodigo());
+				ps2.setLong(7, detalle.getCodigoArticulo());
+				montoTotal +=detalle.getTotal(); 
 				ps2.execute();
 				
 				String sql3=" select * from inventario where codigo =? and sucursal =?";
@@ -273,20 +260,20 @@ public class ComprasService extends Conexion {
 				}
 				
 			}
-			String sql5 = "update orden_compra_cabecera set estado = 'RECEPCIONADO' where codigo= ?";
-			PreparedStatement ps5 = c.prepareStatement(sql5);
-			ps5.setLong(1, cabecera.getId());
-			ps5.execute();
+			Date fechaVencimiento =new Date(System.currentTimeMillis());
+			if(cabecera.getPlazo()!=null && cabecera.getPlazo()>0)
+			fechaVencimiento = sumarDias(new Date(System.currentTimeMillis()), cabecera.getPlazo());
 			
 			String glosa = NumberToLetterConverter.convertNumberToLetter(montoTotal);
 			String sql6 = "insert into fondo_debito (estado, fecha,fecha_vencimiento,cliente, numero,monto,sucursal,documento, documento_numero, glosa) "
-					+ "values ('PENDIENTE', current_date,current_date + interval '2 month',?,1,?,?,'COMPRA',?,?)";
+					+ "values ('PENDIENTE', current_date,?,?,1,?,?,'COMPRA',?,?)";
 			PreparedStatement ps6 = c.prepareStatement(sql6);
-			ps6.setLong(1, cabecera.getProveedorCodigo());
-			ps6.setLong(2, montoTotal);
-			ps6.setString(3, cabecera.getSucursal());
-			ps6.setLong(4, cabecera.getId());
-			ps6.setString(5, glosa);
+			ps6.setDate(1, fechaVencimiento);
+			ps6.setLong(2, cabecera.getProveedorCodigo());
+			ps6.setLong(3, montoTotal);
+			ps6.setString(4, cabecera.getSucursal());
+			ps6.setLong(5, cabecera.getCodigo());
+			ps6.setString(6, glosa);
 			ps6.execute();
 			
 			c.commit();
@@ -303,13 +290,13 @@ public class ComprasService extends Conexion {
 		List<RegistroCompraDetalleParam> lista = new ArrayList<RegistroCompraDetalleParam>();
 		Connection c = ObtenerConexion();
 		try {
-			String sql =" select rcd.*, a.descripcion from registro_compra_detalle rcd, articulos a where a.codigo = rcd.codigo_articulo  and rcd.id = ?";
+			String sql =" select rcd.*, a.descripcion from orden_compra_detalle rcd, articulos a where a.codigo = rcd.codigo_articulo  and rcd.codigo = ?";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setLong(1, codigo);
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
 				RegistroCompraDetalleParam entidad = new RegistroCompraDetalleParam();
-				entidad.setId(rs.getInt("id"));
+				entidad.setId(rs.getInt("codigo"));
 				entidad.setCodigoArticulo(rs.getInt("codigo_articulo"));
 				entidad.setCantidad(rs.getInt("cantidad"));
 				entidad.setPrecio(rs.getLong("precio"));
@@ -332,19 +319,19 @@ public class ComprasService extends Conexion {
 		Connection c= ObtenerConexion();
 		try {
 			c.setAutoCommit(false);
-			String sql = "select * from registro_compra_cabecera where id = ?";
+			String sql = "select * from orden_compra_cabecera where codigo = ?";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setLong(1,cabecera.getNumeroRegistroCompra());
 			ResultSet rs= ps.executeQuery();
-			RegistroCompraCabecera rcc = new RegistroCompraCabecera();
+			OrdenCompraCabecera rcc = new OrdenCompraCabecera();
 			while(rs.next()){				
-				rcc.setId(rs.getInt("id"));
+				rcc.setCodigo(rs.getInt("codigo"));
 				rcc.setCondicionCompra(rs.getString("condicion_compra"));
-				rcc.setPlazo(rs.getString("plazo"));
+				rcc.setPlazo(rs.getInt("plazo"));
 				rcc.setProveedor(rs.getString("proveedor"));
 				rcc.setSucursal(rs.getString("sucursal"));
 				rcc.setFechaEntrega(rs.getDate("fecha_entrega"));
-				rcc.setFecha(rs.getDate("fecha"));
+				rcc.setFechaCreacion(rs.getDate("fecha_creacion"));
 				rcc.setUsuario(rs.getString("usuario"));
 				rcc.setEstado(rs.getString("estado"));
 				rcc.setProveedorCodigo(rs.getLong("proveedor_codigo"));
@@ -361,7 +348,7 @@ public class ComprasService extends Conexion {
 				+ " values (?,?,?,?,'ACTIVO', current_timestamp,?)";
 			PreparedStatement ps2= c.prepareStatement(sql2);
 			ps2.setLong(1, sec);
-			ps2.setLong(2, rcc.getId());
+			ps2.setLong(2, rcc.getCodigo());
 			ps2.setString(3, rcc.getSucursal());
 			ps2.setString(4, cabecera.getUsuario());
 			ps2.setString(5, glosa);
@@ -382,10 +369,10 @@ public class ComprasService extends Conexion {
 				ps3.setString(8, entidadDetalle.getTipo());
 				ps3.execute();	
 				
-				String sql4= "select * from registro_compra_detalle where id=?"
+				String sql4= "select * from orden_compra_detalle where codigo=?"
 						+ " and codigo_articulo=?";
 				PreparedStatement ps4 = c.prepareStatement(sql4);
-				ps4.setLong(1, rcc.getId());
+				ps4.setLong(1, rcc.getCodigo());
 				ps4.setLong(2, entidadDetalle.getCodigoArticulo());
 				ResultSet rs4 = ps4.executeQuery();
 				Long cantidadCompra = 0L;
@@ -403,10 +390,6 @@ public class ComprasService extends Conexion {
 					ps5.execute();					
 				}
 			}
-			String sql7=" update registro_compra_cabecera set estado = 'CON ND' where id = ?";
-			PreparedStatement ps7 =c.prepareStatement(sql7);
-			ps7.setLong(1, cabecera.getNumeroRegistroCompra());
-			ps7.execute();
 			
 			String sql8 = "update orden_compra_cabecera set estado='CON ND' where codigo = ?";
 			PreparedStatement ps8= c.prepareStatement(sql8);
@@ -433,5 +416,11 @@ public class ComprasService extends Conexion {
 		return true;
 	}
 	
+    public static Date sumarDias(Date fecha, int dias){        
+	    Calendar calendar = Calendar.getInstance();
+	    calendar.setTime(fecha);    
+	    calendar.add(Calendar.DAY_OF_YEAR, dias);                     
+	    return (Date) calendar.getTime();
+    }
 	
 }

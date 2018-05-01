@@ -21,7 +21,6 @@ import com.google.gson.Gson;
 import com.panda.panda_sys.model.compras.NotaDebito;
 import com.panda.panda_sys.model.compras.OrdenCompra;
 import com.panda.panda_sys.model.compras.OrdenCompraCabecera;
-import com.panda.panda_sys.model.compras.RegistroCompra;
 import com.panda.panda_sys.param.compras.OrdenCompraDetalleParam;
 import com.panda.panda_sys.param.compras.RegistroCompraDetalleParam;
 import com.panda.panda_sys.services.compras.ComprasService;
@@ -97,10 +96,10 @@ public class ComprasResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response insertarRegistroCompra(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, IOException {
 		ComprasService comprasService = new ComprasService();
-		RegistroCompra param = new RegistroCompra();
+		OrdenCompra param = new OrdenCompra();
 		if(paramJson!= null && !paramJson.equals("")){
 			ObjectMapper mapper = new ObjectMapper();
-			param = mapper.readValue(paramJson, RegistroCompra.class);
+			param = mapper.readValue(paramJson, OrdenCompra.class);
 		}
 		Boolean respuesta = comprasService.recepcionCompra(param);
 		Gson gson = new Gson();

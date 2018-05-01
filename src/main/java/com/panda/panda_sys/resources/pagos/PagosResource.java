@@ -19,6 +19,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.Cheques;
+import com.panda.panda_sys.model.FondoDebito;
 import com.panda.panda_sys.model.ventas.SaldoCliente;
 import com.panda.panda_sys.services.pagos.PagosService;
 
@@ -55,6 +56,23 @@ public class PagosResource {
 			cheque = mapper.readValue(paramJson, Cheques.class);
 		}	
 		String respuesta = service.generarCheque(cheque, usuario);
+		Gson gson = new Gson();
+		Map<String, String> resultado = ImmutableMap.of("respuesta",respuesta);
+		String json = gson.toJson(resultado);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("efectivizar/{usuario}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response efectivizar(@QueryParam("paramJson") String paramJson, @PathParam("usuario") String usuario) throws SQLException, JsonParseException, IOException {		
+		PagosService service  = new PagosService();
+		FondoDebito fondoDebito = new FondoDebito();
+		if(paramJson!= null && !paramJson.equals("") && !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			fondoDebito = mapper.readValue(paramJson, FondoDebito.class);
+		}	
+		String respuesta = service.efectivizar(fondoDebito);
 		Gson gson = new Gson();
 		Map<String, String> resultado = ImmutableMap.of("respuesta",respuesta);
 		String json = gson.toJson(resultado);
