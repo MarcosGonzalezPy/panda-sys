@@ -82,7 +82,6 @@ public class PagosService extends Conexion{
 		Connection c= ObtenerConexion();
 		try {
 			Secuencia secuencia= new Secuencia();
-
 			Long sec = Long.parseLong(secuencia.getSecuencia("efectivo_seq"));
 			c.setAutoCommit(false);
 			String sql1 ="update fondo_debito set estado = 'PAGADO', salida_documento='EFECTIVO', salida_documento_numero=? where documento=? and documento_numero=? ";
