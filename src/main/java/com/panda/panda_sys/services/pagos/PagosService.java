@@ -49,6 +49,15 @@ public class PagosService extends Conexion{
 		if(saldoCliente.getEstado()!= null){
 			sql = sql + " and a.estado = '"+saldoCliente.getEstado()+"' ";
 		}
+		if(saldoCliente.getCodigo()!= null){
+			sql = sql + " and a.codigo = '"+saldoCliente.getCodigo()+"' ";
+		}
+		if(saldoCliente.getDocumento()!= null){
+			sql = sql + " and a.documento = '"+saldoCliente.getDocumento()+"' ";
+		}
+		if(saldoCliente.getDocumentoNumero()!= null){
+			sql = sql + " and a.documento_numero = "+saldoCliente.getDocumentoNumero()+" ";
+		}
 		sql = sql + " order by a.codigo desc "; 
 		Statement statement = con.ObtenerConexion().createStatement();
 		rs = statement.executeQuery(sql);
@@ -89,7 +98,15 @@ public class PagosService extends Conexion{
 			ps1.setLong(1, sec);
 			ps1.setString(2, fd.getDocumento());
 			ps1.setLong(3, fd.getDocumentoNumero());							
-			ps1.execute();	
+			ps1.execute();				
+			if(fd.getDocumento().equals("COMPRA")){
+				String sql2 = "update orden_compra_cabecera set estado = 'PAGADO' where codigo=?";
+				PreparedStatement ps2 = c.prepareStatement(sql2);
+				ps2.setLong(1, fd.getDocumentoNumero());
+				ps2.execute();
+			}else{
+				throw new PandaException("Clase no parametrizada.");
+			}
 			c.commit();
 			c.close();
 		} catch (Exception e) {
@@ -167,6 +184,15 @@ public class PagosService extends Conexion{
 			ps5.setLong(1, cheque.getNumeroCheque());
 			ps5.setString(2, cheque.getBanco());
 			ps5.execute();
+			
+			if(cheque.getDocumento().equals("COMPRA")){
+				String sql6 = "update orden_compra_cabecera set estado = 'PAGADO' where codigo=?";
+				PreparedStatement ps6 = c.prepareStatement(sql6);
+				ps6.setLong(1, cheque.getDocumentoNumero());
+				ps6.execute();
+			}else{
+				throw new PandaException("Clase no parametrizada.");
+			}
 			
 			c.commit();
 			c.close();

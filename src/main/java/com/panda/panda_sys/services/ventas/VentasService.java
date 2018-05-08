@@ -613,7 +613,7 @@ public class VentasService extends Conexion {
 			ps6.setLong(1, fc.getCodigoPersona());
 			ps6.setLong(2, montoCredito);
 			ps6.setString(3, fc.getSucursal());
-			ps6.setString(4, fc.getNumeroFactura());
+			ps6.setLong(4,Long.parseLong(fc.getNumeroFactura()));
 			ps6.execute();
 			
 			String sql7=" update factura_cabecera set estado = 'CON NC' where numero_factura = ?";
