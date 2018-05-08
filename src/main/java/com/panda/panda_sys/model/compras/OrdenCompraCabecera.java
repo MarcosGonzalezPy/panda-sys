@@ -8,13 +8,48 @@ public class OrdenCompraCabecera {
 	private String sucursal;
 	private String proveedor;
 	private String condicionCompra;
-	private String plazos;
+	private Integer plazo;
 	private Date fechaEntrega;
 	private Date fechaCreacion;
 	private String usuario;
 	private String estado;
 	private Long proveedorCodigo;
+	private Long numeroFactura;
+	private Date fechaRecepcion;
+	private Long timbrado;
+	private String ruc;
+	private String usuarioRecepcion;
 	
+	public Long getNumeroFactura() {
+		return numeroFactura;
+	}
+	public void setNumeroFactura(Long numeroFactura) {
+		this.numeroFactura = numeroFactura;
+	}
+	public Date getFechaRecepcion() {
+		return fechaRecepcion;
+	}
+	public void setFechaRecepcion(Date fechaRecepcion) {
+		this.fechaRecepcion = fechaRecepcion;
+	}
+	public Long getTimbrado() {
+		return timbrado;
+	}
+	public void setTimbrado(Long timbrado) {
+		this.timbrado = timbrado;
+	}
+	public String getRuc() {
+		return ruc;
+	}
+	public void setRuc(String ruc) {
+		this.ruc = ruc;
+	}
+	public String getUsuarioRecepcion() {
+		return usuarioRecepcion;
+	}
+	public void setUsuarioRecepcion(String usuarioRecepcion) {
+		this.usuarioRecepcion = usuarioRecepcion;
+	}
 	public Long getProveedorCodigo() {
 		return proveedorCodigo;
 	}
@@ -51,11 +86,11 @@ public class OrdenCompraCabecera {
 	public void setCondicionCompra(String condicion_compra) {
 		this.condicionCompra = condicion_compra;
 	}
-	public String getPlazos() {
-		return plazos;
+	public Integer getPlazo() {
+		return plazo;
 	}
-	public void setPlazos(String plazos) {
-		this.plazos = plazos;
+	public void setPlazo(Integer plazo) {
+		this.plazo = plazo;
 	}
 	public Date getFechaEntrega() {
 		return fechaEntrega;

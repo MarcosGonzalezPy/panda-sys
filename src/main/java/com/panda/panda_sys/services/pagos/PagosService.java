@@ -78,6 +78,28 @@ public class PagosService extends Conexion{
 		return lista;
 	}
 	
+	public String efectivizar(FondoDebito fd) throws SQLException{
+		Connection c= ObtenerConexion();
+		try {
+			Secuencia secuencia= new Secuencia();
+			Long sec = Long.parseLong(secuencia.getSecuencia("efectivo_seq"));
+			c.setAutoCommit(false);
+			String sql1 ="update fondo_debito set estado = 'PAGADO', salida_documento='EFECTIVO', salida_documento_numero=? where documento=? and documento_numero=? ";
+			PreparedStatement ps1 = c.prepareStatement(sql1);
+			ps1.setLong(1, sec);
+			ps1.setString(2, fd.getDocumento());
+			ps1.setLong(3, fd.getDocumentoNumero());							
+			ps1.execute();	
+			c.commit();
+			c.close();
+		} catch (Exception e) {
+			System.out.println("ERROR PANDA: "+e.getMessage());
+			c.close();
+			return e.getMessage();
+		}
+		return "OK";
+	}
+	
 	public String generarCheque(Cheques cheque, String usuario) throws SQLException{
 		Connection c = ObtenerConexion();
 		try {

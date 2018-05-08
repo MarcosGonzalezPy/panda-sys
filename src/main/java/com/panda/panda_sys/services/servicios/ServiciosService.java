@@ -249,11 +249,12 @@ public class ServiciosService extends Conexion{
 	public boolean modificarServicios(Servicios servicios) throws SQLException {
 		Connection c = ObtenerConexion();
 		try {
-			String sql = "update servicios set descripcion = UPPER( ? ), estado = ?" + "where codigo = ?";
+			String sql = "update servicios set descripcion = UPPER( ? ), estado = ?, precio_unitario=? where codigo = ?";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setString(1, servicios.getDescripcion());
 			ps.setString(2, servicios.getEstado());
-			ps.setInt(3, servicios.getCodigo());
+			ps.setLong(3, servicios.getPrecioUnitario());
+			ps.setInt(4, servicios.getCodigo());
 			ps.execute();
 
 			c.close();
