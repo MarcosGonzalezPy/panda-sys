@@ -11,9 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.panda.panda_sys.model.catalogo.CuentasBancarias;
-import com.panda.panda_sys.model.catalogo.Servicios;
-import com.panda.panda_sys.param.CuentasBancariasParam;
+import com.panda.panda_sys.model.catalogo.CuentasBancarias; 
 import com.panda.panda_sys.util.Conexion;
 
 public class CuentasBancariasService extends Conexion {
@@ -53,6 +51,15 @@ public class CuentasBancariasService extends Conexion {
 			}
 			sql = sql + conector + " UPPER(banco) like UPPER('%" + cuentasBancarias.getBanco() + "%') ";
 		}
+		if (cuentasBancarias.getTipo() != null) {
+			String conector = null;
+			if (sql.contains("where")) {
+				conector = " and ";
+			} else {
+				conector = " where ";
+			}
+			sql = sql + conector + " tipo ='" + cuentasBancarias.getTipo() + "' ";
+		}
 
 		if (cuentasBancarias.getNumero() != null) {
 			String conector = null;
@@ -74,13 +81,15 @@ public class CuentasBancariasService extends Conexion {
 			entidad.setNumero(rs.getString("numero"));
 			entidad.setUsuario(rs.getString("usuario"));
 			entidad.setFechaCreacion(rs.getDate("fecha_creacion"));
+			entidad.setFondo(rs.getLong("fondo"));
+			entidad.setTipo(rs.getString("tipo"));
 			lista.add(entidad);
 		}
 		return lista;
 	}
 
 	public boolean insertar(CuentasBancarias cuentasBancarias) throws SQLException {
-		Date fecha = new Date();
+		/*Date fecha = new Date();
 		try { 
 			String sql = "insert into cuenta_bancaria ( estado, banco, numero, fecha_creacion, usuario) " + "values ( '"
 					+ cuentasBancarias.getEstado() + "', UPPER('" + cuentasBancarias.getBanco() + "') , '"
@@ -93,7 +102,30 @@ public class CuentasBancariasService extends Conexion {
 			return false;
 		}
 
-		return true;
+		return true;*/
+		
+		Connection c = ObtenerConexion();
+		try {
+			c.setAutoCommit(false); 
+				String sql = "insert into cuenta_bancaria (estado, banco, numero, fecha_creacion, usuario, fondo, tipo) "
+						+ "values ('ACTIVO',?,?,CURRENT_TIMESTAMP,?,?,?);";
+				PreparedStatement ps = c.prepareStatement(sql);
+				ps.setString(1, cuentasBancarias.getBanco());
+				ps.setString(2, cuentasBancarias.getNumero()); 
+				ps.setString(3, cuentasBancarias.getUsuario());
+				ps.setLong(4, cuentasBancarias.getFondo());
+				ps.setString(5, cuentasBancarias.getTipo());
+
+				ps.execute();
+ 
+			c.commit();
+			c.close();
+			return true;
+		} catch (Exception e) {
+			c.close();
+			System.out.println("ERROR " + e.getMessage());
+			return false;
+		}
 	}
 
 	public boolean eliminar(Integer codigo) throws SQLException {
@@ -112,14 +144,17 @@ public class CuentasBancariasService extends Conexion {
 		Date fecha = new Date();
 		Connection c = ObtenerConexion();
 		try {
-			String sql = "update cuenta_bancaria set estado = ?, banco = UPPER( ? ), numero = ?" + "where codigo = ?";
+			String sql = "update cuenta_bancaria set estado = ?, banco = ? , numero = ?, fondo = ?, tipo = ?" + "where codigo = ?";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setString(1, cuentasBancarias.getEstado());
 			ps.setString(2, cuentasBancarias.getBanco());
 			ps.setString(3, cuentasBancarias.getNumero());
-			ps.setInt(4, cuentasBancarias.getCodigo());
+			ps.setLong(4, cuentasBancarias.getFondo());
+			ps.setString(5, cuentasBancarias.getTipo());
+			ps.setInt(6, cuentasBancarias.getCodigo());
 			ps.execute();
 			c.close();
+			
 		} catch (Exception e) {
 			c.close();
 			return false;
