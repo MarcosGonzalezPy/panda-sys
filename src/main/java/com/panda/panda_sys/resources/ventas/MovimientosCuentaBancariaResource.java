@@ -3,6 +3,7 @@ package com.panda.panda_sys.resources.ventas;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -22,7 +23,7 @@ import com.panda.panda_sys.services.ventas.MovimientosCuentaBancariaService;
 @Produces(MediaType.APPLICATION_JSON)
 public class MovimientosCuentaBancariaResource {
 
-	@POST
+	@GET
 	@Path("/depositar-cheques/{numero}/{usuario}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response depositarCheques(@PathParam("numero") String numero, @PathParam("usuario") String usuario, @QueryParam("paramJson") String paramJson)
