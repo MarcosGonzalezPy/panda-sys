@@ -83,7 +83,7 @@ public class ChequesResource {
 	}
 
 	@GET
-	@Path("/delete/{id}")
+	@Path("/delete/{codigo}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response eliminar(@PathParam("codigo") Integer codigo) throws SQLException {
 		ChequesService chequeService = new ChequesService();

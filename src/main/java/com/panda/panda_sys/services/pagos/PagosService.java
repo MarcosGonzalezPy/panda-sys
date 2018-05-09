@@ -104,6 +104,11 @@ public class PagosService extends Conexion{
 				PreparedStatement ps2 = c.prepareStatement(sql2);
 				ps2.setLong(1, fd.getDocumentoNumero());
 				ps2.execute();
+			}else if(fd.getDocumento().equals("NOTACRE")){
+				String sql6 = "update nota_credito_cabecera set estado = 'PAGADO' where numero_factura=?";
+				PreparedStatement ps6 = c.prepareStatement(sql6);
+				ps6.setString(1, fd.getDocumentoNumero().toString());
+				ps6.execute();
 			}else{
 				throw new PandaException("Clase no parametrizada.");
 			}
@@ -189,6 +194,11 @@ public class PagosService extends Conexion{
 				String sql6 = "update orden_compra_cabecera set estado = 'PAGADO' where codigo=?";
 				PreparedStatement ps6 = c.prepareStatement(sql6);
 				ps6.setLong(1, cheque.getDocumentoNumero());
+				ps6.execute();
+			}else if(cheque.getDocumento().equals("NOTACRE")){
+				String sql6 = "update nota_credito_cabecera set estado = 'PAGADO' where numero_factura=?";
+				PreparedStatement ps6 = c.prepareStatement(sql6);
+				ps6.setString(1, cheque.getDocumentoNumero().toString());
 				ps6.execute();
 			}else{
 				throw new PandaException("Clase no parametrizada.");

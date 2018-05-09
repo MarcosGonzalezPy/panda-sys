@@ -190,6 +190,7 @@ public class ChequesService extends Conexion {
 				c.close();
 			}
 		} catch (Exception e) {
+			System.out.println("Error Panda: "+e.getMessage());
 			c.close();
 			return false;
 		}
