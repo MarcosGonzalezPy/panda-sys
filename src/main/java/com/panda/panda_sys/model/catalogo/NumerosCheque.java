@@ -7,7 +7,7 @@ public class NumerosCheque {
 	private Integer codigo;
 	private String estado;
 	private String banco;
-	private Integer numeroCuentaBancaria;
+	private Long numeroCuentaBancaria;
 	private Integer numeroDesde;
 	private Integer numeroHasta;
 	private Date fechaCreacion;
@@ -31,10 +31,10 @@ public class NumerosCheque {
 	public void setBanco(String banco) {
 		this.banco = banco;
 	}
-	public Integer getNumeroCuentaBancaria() {
+	public Long getNumeroCuentaBancaria() {
 		return numeroCuentaBancaria;
 	}
-	public void setNumeroCuentaBancaria(Integer numeroCuentaBancaria) {
+	public void setNumeroCuentaBancaria(Long numeroCuentaBancaria) {
 		this.numeroCuentaBancaria = numeroCuentaBancaria;
 	}
 	public Integer getNumeroDesde() {

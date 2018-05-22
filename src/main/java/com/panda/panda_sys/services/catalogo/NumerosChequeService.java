@@ -74,7 +74,7 @@ public class NumerosChequeService extends Conexion {
 			entidad.setCodigo(Integer.parseInt(rs.getString("codigo")));
 			entidad.setEstado(rs.getString("estado"));
 			entidad.setBanco(rs.getString("banco"));
-			entidad.setNumeroCuentaBancaria(rs.getInt("numero_cuenta_bancaria"));
+			entidad.setNumeroCuentaBancaria(rs.getLong("numero_cuenta_bancaria"));
 			entidad.setNumeroDesde(rs.getInt("numero"));
 			entidad.setFechaCreacion(rs.getDate("fecha_creacion"));
 			entidad.setUsuario(rs.getString("usuario"));
@@ -83,7 +83,7 @@ public class NumerosChequeService extends Conexion {
 		return lista;
 	}
 
-	public boolean insertar(NumerosCheque entidad) throws SQLException {
+	public String insertar(NumerosCheque entidad) throws SQLException {
 		Connection c = ObtenerConexion();
 		try {
 			c.setAutoCommit(false);
@@ -95,7 +95,7 @@ public class NumerosChequeService extends Conexion {
 						+ "values ('DISPONIBLE',?,?,?,CURRENT_TIMESTAMP,?);";
 				PreparedStatement ps = c.prepareStatement(sql);
 				ps.setString(1, entidad.getBanco());
-				ps.setInt(2, entidad.getNumeroCuentaBancaria());
+				ps.setLong(2, entidad.getNumeroCuentaBancaria());
 				ps.setInt(3, numeroIterado);
 				ps.setString(4, entidad.getUsuario());
 
@@ -104,11 +104,11 @@ public class NumerosChequeService extends Conexion {
 			}
 			c.commit();
 			c.close();
-			return true;
+			return "OK";
 		} catch (Exception e) {
 			c.close();
 			System.out.println("ERROR " + e.getMessage());
-			return false;
+			return e.getMessage();
 		}
 
 	}

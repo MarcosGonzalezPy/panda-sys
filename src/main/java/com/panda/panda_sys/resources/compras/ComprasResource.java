@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -19,11 +20,15 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.compras.NotaDebito;
+import com.panda.panda_sys.model.compras.NotaDebitoCabecera;
 import com.panda.panda_sys.model.compras.OrdenCompra;
 import com.panda.panda_sys.model.compras.OrdenCompraCabecera;
+import com.panda.panda_sys.model.ventas.FacturaCabecera;
 import com.panda.panda_sys.param.compras.OrdenCompraDetalleParam;
 import com.panda.panda_sys.param.compras.RegistroCompraDetalleParam;
 import com.panda.panda_sys.services.compras.ComprasService;
+
+import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 
 @Path("/compras")
@@ -132,6 +137,46 @@ public class ComprasResource {
 		Boolean respuesta = comprasService.registrarNotaDebito(param);
 		Gson gson = new Gson();
 		String json = gson.toJson(respuesta);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("/listar-nota-credito/{codigo}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response listarNC(@PathParam("codigo") Long codigo) throws SQLException, JsonParseException, JsonMappingException, IOException {
+		List<OrdenCompraDetalleParam> lista = new ArrayList<OrdenCompraDetalleParam>();
+		ComprasService comprasService = new ComprasService();
+		lista = comprasService.listarNotaCredito(codigo);
+		Gson gson = new Gson();
+		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("/listar-nota-credito-cabecera/{codigo}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response listarNotaCreditoCabecera(@PathParam("codigo") Long codigo) throws SQLException, JsonParseException, JsonMappingException, IOException {		
+		ComprasService comprasService = new ComprasService();
+		NotaDebitoCabecera entidad = comprasService.obtenerNotaCreditoCabecera(codigo);
+		Gson gson = new Gson();
+		String json = gson.toJson(entidad);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("/anular-nc")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response anularNC(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException {		
+		ComprasService comprasService = new ComprasService();
+		FacturaCabecera param = new FacturaCabecera();
+		if(paramJson!= null && !paramJson.equals("")){
+			ObjectMapper mapper = new ObjectMapper();
+			param = mapper.readValue(paramJson, FacturaCabecera.class);
+		}
+		String result = comprasService.anularNC(param);
+		Gson gson = new Gson();
+		Map<String, String> resultado = ImmutableMap.of("respuesta",result);
+		String json = gson.toJson(resultado);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 

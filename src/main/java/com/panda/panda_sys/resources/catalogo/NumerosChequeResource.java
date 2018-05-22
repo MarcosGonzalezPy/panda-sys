@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -21,6 +22,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.catalogo.NumerosCheque;
 import com.panda.panda_sys.services.catalogo.NumerosChequeService;
+
+import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 @Path("/catalogo/numeros-cheque")
 @Produces(MediaType.APPLICATION_JSON)
@@ -55,8 +58,11 @@ public class NumerosChequeResource {
 			ObjectMapper mapper = new ObjectMapper();
 			pojo = mapper.readValue(paramJson, NumerosCheque.class);
 		}
-		service.insertar(pojo);
-		return Response.ok().header("Access-Control-Allow-Origin", "*").build();
+		String result =service.insertar(pojo);
+		Gson gson = new Gson();
+		Map<String, String> resultado = ImmutableMap.of("respuesta",result);
+		String json = gson.toJson(resultado);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 
 	@GET

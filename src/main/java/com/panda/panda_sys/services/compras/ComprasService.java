@@ -18,10 +18,12 @@ import com.panda.panda_sys.model.compras.NotaDebitoDetalle;
 import com.panda.panda_sys.model.compras.OrdenCompra;
 import com.panda.panda_sys.model.compras.OrdenCompraCabecera;
 import com.panda.panda_sys.model.compras.OrdenCompraDetalle;
+import com.panda.panda_sys.model.ventas.FacturaCabecera;
 import com.panda.panda_sys.param.compras.OrdenCompraDetalleParam;
 import com.panda.panda_sys.param.compras.RegistroCompraDetalleParam;
 import com.panda.panda_sys.util.Conexion;
 import com.panda.panda_sys.util.NumberToLetterConverter;
+import com.panda.panda_sys.util.PandaException;
 import com.panda.panda_sys.util.Secuencia;
 
 public class ComprasService extends Conexion {
@@ -70,7 +72,7 @@ public class ComprasService extends Conexion {
 	public List<OrdenCompraCabecera> listarOrdenCompra(OrdenCompraCabecera param) throws SQLException {
 		List<OrdenCompraCabecera> lista = new ArrayList<OrdenCompraCabecera>();
 
-		String sql = " select  codigo, sucursal,  proveedor,  condicion_compra, plazo,  fecha_entrega ,fecha_creacion,  usuario, estado, proveedor_codigo from orden_compra_cabecera ";
+		String sql = " select  codigo, sucursal,  proveedor,  condicion_compra, plazo,  fecha_entrega ,fecha_creacion,  usuario, estado, proveedor_codigo, ruc,numero_factura, timbrado from orden_compra_cabecera ";
 
 		if (param.getEstado() != null) {
 			String conector = null;
@@ -123,6 +125,9 @@ public class ComprasService extends Conexion {
 			entidad.setUsuario(rs.getString("usuario"));
 			entidad.setEstado(rs.getString("estado"));
 			entidad.setProveedorCodigo(rs.getLong("proveedor_codigo"));
+			entidad.setRuc(rs.getString("ruc"));
+			entidad.setTimbrado(rs.getLong("timbrado"));
+			entidad.setNumeroFactura(rs.getLong("numero_factura"));
 			lista.add(entidad);
 		}
 		return lista;
@@ -359,7 +364,7 @@ public class ComprasService extends Conexion {
 					+ "cantidad,precio,iva,total,impuesto,tipo)"
 					+ " values (?,?,?,?,?,?,?,?)";
 				PreparedStatement ps3 =c.prepareStatement(sql3);
-				ps3.setLong(1, sec);
+				ps3.setLong(1, cabecera.getNumeroRegistroCompra());
 				ps3.setLong(2, entidadDetalle.getCodigoArticulo());
 				ps3.setLong(3, entidadDetalle.getCantidad());
 				ps3.setLong(4, entidadDetalle.getPrecio());
@@ -391,7 +396,7 @@ public class ComprasService extends Conexion {
 				}
 			}
 			
-			String sql8 = "update orden_compra_cabecera set estado='CON ND' where codigo = ?";
+			String sql8 = "update orden_compra_cabecera set estado='NOTACRE' where codigo = ?";
 			PreparedStatement ps8= c.prepareStatement(sql8);
 			ps8.setLong(1, cabecera.getNumeroRegistroCompra());
 			ps8.execute();
@@ -422,5 +427,85 @@ public class ComprasService extends Conexion {
 	    calendar.add(Calendar.DAY_OF_YEAR, dias);                     
 	    return (Date) calendar.getTime();
     }
+    
+    public String anularNC(FacturaCabecera fc) throws SQLException{
+    	Connection c = ObtenerConexion();
+    	try {
+			c.setAutoCommit(false);
+			String sql1 = "select * from fondo_credito where documento ='NOTACRE' and documento_numero =?";
+			PreparedStatement ps1 = c.prepareStatement(sql1);
+			ps1.setString(1, fc.getNumeroFactura());
+			ResultSet rs1=  ps1.executeQuery();
+			while(rs.next()){
+				String estado = rs.getString("estado");
+				if(estado.equals("PENDIENTE")){
+					throw new PandaException("Debe reversar primero el pago antes de anular la NC.");
+				}
+			}
+			String sql2="undate fondo_credito set estado ='ANULADO' where documento ='NOTACRE' and documento_numero =? ";
+			PreparedStatement ps2 = 
+			c.commit();
+			c.close();
+		} catch (Exception e) {
+			c.close();
+			System.out.println("ERROR: "+e.getMessage());
+			return "ERROR: "+e.getMessage();
+		}
+    	return "OK PROBAR";
+    }
 	
+    public List<OrdenCompraDetalleParam> listarNotaCredito(Long id) throws SQLException{
+    	List<OrdenCompraDetalleParam> lista= new ArrayList<OrdenCompraDetalleParam>();
+    	Connection c= ObtenerConexion();
+    	try {
+    		c.setAutoCommit(false);
+    		String sq1="select b.*, a.descripcion from articulos a, nota_debito_detalle b where a.codigo = b.codigo_articulo and numero_registro_compra=?";
+    		PreparedStatement ps1 =c.prepareStatement(sq1);
+    		ps1.setLong(1, id);
+    		ResultSet rs1=ps1.executeQuery();
+    		while(rs1.next()){
+    			OrdenCompraDetalleParam entidad = new OrdenCompraDetalleParam();
+    			entidad.setCodigo(rs1.getInt("id"));
+    			entidad.setCantidad(rs1.getInt("cantidad"));
+    			entidad.setCodigoArticulo(rs1.getInt("codigo_articulo"));
+    			entidad.setDescripcion(rs1.getString("descripcion"));
+    			entidad.setIva(rs1.getInt("iva"));
+    			entidad.setTotal(rs1.getLong("total"));
+    			entidad.setImpuesto(rs1.getLong("impuesto"));
+    			entidad.setPrecio(rs1.getLong("precio"));
+    			lista.add(entidad);
+    		}
+    		c.commit();
+			c.close();
+		} catch (Exception e) {
+			System.out.println("Error: "+e.getMessage());
+			c.close();
+		}
+    	return lista;
+    }
+    
+    public NotaDebitoCabecera obtenerNotaCreditoCabecera(Long id) throws SQLException{
+    	NotaDebitoCabecera entidad = new NotaDebitoCabecera();
+    	Connection c= ObtenerConexion();
+    	try {
+    		String sql = "select * from nota_debito_cabecera where numero_registro_compra = ?";
+    		PreparedStatement ps= c.prepareStatement(sql);
+    		ps.setLong(1, id);
+    		ResultSet rs= ps.executeQuery();
+    		while(rs.next()){
+    			entidad.setId(rs.getLong("id"));
+    			entidad.setNumeroRegistroCompra(rs.getLong("numero_restro_compra"));
+    			entidad.setSucursal(rs.getString("sucursal"));
+    			entidad.setUsuario(rs.getString("usuario"));
+    			entidad.setEstado(rs.getString("estado"));
+    			entidad.setFecha(rs.getDate("fecha"));
+    			entidad.setGlosa(rs.getString("glosa"));
+    		}
+			c.close();
+		} catch (Exception e) {
+			System.out.println("ERROR PANDA: "+e.getMessage());
+			c.close();
+		}
+    	return entidad;
+    }
 }
