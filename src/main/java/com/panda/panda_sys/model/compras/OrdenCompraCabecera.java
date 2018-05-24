@@ -19,7 +19,21 @@ public class OrdenCompraCabecera {
 	private Long timbrado;
 	private String ruc;
 	private String usuarioRecepcion;
+	private Long monto;
+	private String nc;
 	
+	public Long getMonto() {
+		return monto;
+	}
+	public void setMonto(Long monto) {
+		this.monto = monto;
+	}
+	public String getNc() {
+		return nc;
+	}
+	public void setNc(String nc) {
+		this.nc = nc;
+	}
 	public Long getNumeroFactura() {
 		return numeroFactura;
 	}

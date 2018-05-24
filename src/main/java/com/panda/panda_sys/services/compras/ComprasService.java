@@ -43,7 +43,7 @@ public class ComprasService extends Conexion {
 			PreparedStatement ps1= c.prepareStatement(sql1);
 			ps1.setLong(1, ca.getCodigo());
 			ps1.setString(2, ca.getSucursal());
-			ps1.setString(3, ca.getProveedor());
+			ps1.setString(3, ca.getProveedor());```````````````````
 			ps1.setDate(4, ca.getFechaEntrega());
 			ps1.setString(5, ca.getUsuario());
 			ps1.setString(6, "ACTIVO");
@@ -72,7 +72,8 @@ public class ComprasService extends Conexion {
 	public List<OrdenCompraCabecera> listarOrdenCompra(OrdenCompraCabecera param) throws SQLException {
 		List<OrdenCompraCabecera> lista = new ArrayList<OrdenCompraCabecera>();
 
-		String sql = " select  codigo, sucursal,  proveedor,  condicion_compra, plazo,  fecha_entrega ,fecha_creacion,  usuario, estado, proveedor_codigo, ruc,numero_factura, timbrado from orden_compra_cabecera ";
+		String sql = "select  occ.nc,(select sum (total) from orden_compra_detalle where codigo = occ.codigo group by codigo)as monto, occ.* "
+				+ "from orden_compra_cabecera occ left outer join  nota_debito_cabecera ndc ON occ.codigo = ndc.numero_registro_compra ";
 
 		if (param.getEstado() != null) {
 			String conector = null;
@@ -81,7 +82,7 @@ public class ComprasService extends Conexion {
 			}else{
 				conector = " where ";
 			}
-			sql = sql + conector +"  estado = upper('" + param.getEstado() + "')  ";
+			sql = sql + conector +"  occ.estado = upper('" + param.getEstado() + "')  ";
 		}
 		if (param.getCodigo() != 0) {
 			String conector = null;
@@ -90,7 +91,7 @@ public class ComprasService extends Conexion {
 			}else{
 				conector = " where ";
 			}
-			sql = sql + conector +"  codigo = " + param.getCodigo() + "  ";
+			sql = sql + conector +"  occ.codigo = " + param.getCodigo() + "  ";
 		}
 		if (param.getSucursal() != null) {
 			String conector = null;
@@ -99,7 +100,7 @@ public class ComprasService extends Conexion {
 			}else{
 				conector = " where ";
 			}
-			sql = sql +conector+ "  sucursal = '" + param.getSucursal() + "' ";
+			sql = sql +conector+ "  occ.sucursal = '" + param.getSucursal() + "' ";
 		}
 		if (param.getProveedor() != null) {
 			String conector = null;
@@ -108,9 +109,9 @@ public class ComprasService extends Conexion {
 			}else{
 				conector = " where ";
 			}
-			sql = sql +conector + " proveedor like '%" + param.getProveedor() + "%' ";
+			sql = sql +conector + " occ.proveedor like '%" + param.getProveedor() + "%' ";
 		}
-		sql +=" order by codigo desc ";
+		sql +=" order by occ.codigo desc ";
 		Statement statement = con.ObtenerConexion().createStatement();
 		rs = statement.executeQuery(sql);
 		while (rs.next()) {
@@ -128,6 +129,8 @@ public class ComprasService extends Conexion {
 			entidad.setRuc(rs.getString("ruc"));
 			entidad.setTimbrado(rs.getLong("timbrado"));
 			entidad.setNumeroFactura(rs.getLong("numero_factura"));
+			entidad.setMonto(rs.getLong("monto"));
+			entidad.setNc(rs.getString("nc"));
 			lista.add(entidad);
 		}
 		return lista;
@@ -396,13 +399,13 @@ public class ComprasService extends Conexion {
 				}
 			}
 			
-			String sql8 = "update orden_compra_cabecera set estado='NOTACRE' where codigo = ?";
+			String sql8 = "update orden_compra_cabecera set nc='S' where codigo = ?";
 			PreparedStatement ps8= c.prepareStatement(sql8);
 			ps8.setLong(1, cabecera.getNumeroRegistroCompra());
 			ps8.execute();
 			
 			String sql9 =" insert into fondo_credito (estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero, glosa)"
-					+ "values ('PENDIENTE',CURRENT_TIMESTAMP,  current_date + interval '1 month',?,1,?,?,'NOTADEB',?,?) ";
+					+ "values ('PENDIENTE',CURRENT_TIMESTAMP,  current_date + interval '1 month',?,1,?,?,'NOTACRE',?,?) ";
 			PreparedStatement ps9 = c.prepareStatement(sql9);
 			ps9.setLong(1, rcc.getProveedorCodigo());
 			ps9.setLong(2, montoTotal);
@@ -436,14 +439,52 @@ public class ComprasService extends Conexion {
 			PreparedStatement ps1 = c.prepareStatement(sql1);
 			ps1.setString(1, fc.getNumeroFactura());
 			ResultSet rs1=  ps1.executeQuery();
-			while(rs.next()){
-				String estado = rs.getString("estado");
-				if(estado.equals("PENDIENTE")){
+			while(rs1.next()){
+				String estado = rs1.getString("estado");
+				if(!estado.equals("PENDIENTE")){
 					throw new PandaException("Debe reversar primero el pago antes de anular la NC.");
 				}
 			}
-			String sql2="undate fondo_credito set estado ='ANULADO' where documento ='NOTACRE' and documento_numero =? ";
-			PreparedStatement ps2 = 
+			String sql2="update fondo_credito set estado ='ANULADO' where documento ='NOTACRE' and documento_numero =? ";
+			PreparedStatement ps2=c.prepareStatement(sql2); 
+			ps2.setString(1, fc.getNumeroFactura());
+			ps2.execute();
+			
+			String sql3 = "select * from nota_debito_detalle where numero_registro_compra=?";
+			PreparedStatement ps3= c.prepareStatement(sql3);
+			ps3.setLong(1, Long.parseLong(fc.getNumeroFactura()));
+			ResultSet rs3 = ps3.executeQuery();
+			while(rs3.next()){
+				Long codigoArticulo = rs3.getLong("codigo_articulo");
+				Long cantidadNotaCredito = rs3.getLong("cantidad");				
+				String sql4 = "select * from orden_compra_detalle where codigo =? and codigo_articulo =?";
+				PreparedStatement ps4= c.prepareStatement(sql4);
+				ps4.setLong(1, Long.parseLong(fc.getNumeroFactura()));
+				ps4.setLong(2, codigoArticulo);
+				ResultSet rs4 = ps4.executeQuery();
+				Long cantidadOrdenComra =0L;
+				while(rs4.next()){
+					cantidadOrdenComra = rs4.getLong("cantidad");
+				}
+				if(cantidadOrdenComra ==0){
+					throw new PandaException("No se encontro la cantidad.");
+				}
+				if(cantidadNotaCredito<cantidadOrdenComra){
+					String sql5="update inventario set cantidad = cantidad+?"
+					+ " where sucursal=? and codigo_articulo=?";
+					PreparedStatement ps5 =c.prepareStatement(sql5);
+					ps5.setLong(1, cantidadNotaCredito);
+					ps5.setString(2, fc.getSucursal());
+					ps5.setLong(3, codigoArticulo);
+					ps5.execute();					
+				}
+				
+			}
+			String sql6 = "update orden_compra_cabecera set nc =null where codigo=? ";
+			PreparedStatement ps6=c.prepareStatement(sql6);
+			ps6.setLong(1, Long.parseLong(fc.getNumeroFactura()));
+			ps6.execute();
+			
 			c.commit();
 			c.close();
 		} catch (Exception e) {
