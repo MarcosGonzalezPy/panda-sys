@@ -43,7 +43,7 @@ public class ComprasService extends Conexion {
 			PreparedStatement ps1= c.prepareStatement(sql1);
 			ps1.setLong(1, ca.getCodigo());
 			ps1.setString(2, ca.getSucursal());
-			ps1.setString(3, ca.getProveedor());```````````````````
+			ps1.setString(3, ca.getProveedor());
 			ps1.setDate(4, ca.getFechaEntrega());
 			ps1.setString(5, ca.getUsuario());
 			ps1.setString(6, "ACTIVO");
@@ -73,7 +73,7 @@ public class ComprasService extends Conexion {
 		List<OrdenCompraCabecera> lista = new ArrayList<OrdenCompraCabecera>();
 
 		String sql = "select  occ.nc,(select sum (total) from orden_compra_detalle where codigo = occ.codigo group by codigo)as monto, occ.* "
-				+ "from orden_compra_cabecera occ left outer join  nota_debito_cabecera ndc ON occ.codigo = ndc.numero_registro_compra ";
+				+ "from orden_compra_cabecera occ  ";
 
 		if (param.getEstado() != null) {
 			String conector = null;
@@ -141,8 +141,7 @@ public class ComprasService extends Conexion {
 		Connection c = ObtenerConexion();
 		try {
 			c.setAutoCommit(false);
-			
-			
+						
 			String sql = "update orden_compra_cabecera set estado = 'ANULADO' where codigo =?";
 			PreparedStatement ps = c.prepareStatement(sql);
 			ps.setInt(1, codigo);
@@ -367,7 +366,7 @@ public class ComprasService extends Conexion {
 					+ "cantidad,precio,iva,total,impuesto,tipo)"
 					+ " values (?,?,?,?,?,?,?,?)";
 				PreparedStatement ps3 =c.prepareStatement(sql3);
-				ps3.setLong(1, cabecera.getNumeroRegistroCompra());
+				ps3.setLong(1,sec);//ps3.setLong(1, cabecera.getNumeroRegistroCompra());
 				ps3.setLong(2, entidadDetalle.getCodigoArticulo());
 				ps3.setLong(3, entidadDetalle.getCantidad());
 				ps3.setLong(4, entidadDetalle.getPrecio());
@@ -435,7 +434,7 @@ public class ComprasService extends Conexion {
     	Connection c = ObtenerConexion();
     	try {
 			c.setAutoCommit(false);
-			String sql1 = "select * from fondo_credito where documento ='NOTACRE' and documento_numero =?";
+			String sql1 = "select * from fondo_credito where documento ='NOTACRE' and documento_numero =? and estado<>'ANULADO'";
 			PreparedStatement ps1 = c.prepareStatement(sql1);
 			ps1.setString(1, fc.getNumeroFactura());
 			ResultSet rs1=  ps1.executeQuery();
@@ -471,7 +470,7 @@ public class ComprasService extends Conexion {
 				}
 				if(cantidadNotaCredito<cantidadOrdenComra){
 					String sql5="update inventario set cantidad = cantidad+?"
-					+ " where sucursal=? and codigo_articulo=?";
+					+ " where sucursal=? and codigo=?";
 					PreparedStatement ps5 =c.prepareStatement(sql5);
 					ps5.setLong(1, cantidadNotaCredito);
 					ps5.setString(2, fc.getSucursal());
@@ -485,6 +484,11 @@ public class ComprasService extends Conexion {
 			ps6.setLong(1, Long.parseLong(fc.getNumeroFactura()));
 			ps6.execute();
 			
+			String sql7 = "update nota_debito_cabecera set estado = 'ANULADO' where numero_registro_compra = ?";
+			PreparedStatement ps7 = c.prepareStatement(sql7);
+			ps7.setLong(1, Long.parseLong(fc.getNumeroFactura()));
+			ps7.execute();
+			
 			c.commit();
 			c.close();
 		} catch (Exception e) {
@@ -492,7 +496,7 @@ public class ComprasService extends Conexion {
 			System.out.println("ERROR: "+e.getMessage());
 			return "ERROR: "+e.getMessage();
 		}
-    	return "OK PROBAR";
+    	return "OK";
     }
 	
     public List<OrdenCompraDetalleParam> listarNotaCredito(Long id) throws SQLException{
@@ -500,7 +504,9 @@ public class ComprasService extends Conexion {
     	Connection c= ObtenerConexion();
     	try {
     		c.setAutoCommit(false);
-    		String sq1="select b.*, a.descripcion from articulos a, nota_debito_detalle b where a.codigo = b.codigo_articulo and numero_registro_compra=?";
+    		String sq1="  select b.*, a.descripcion from articulos a, nota_debito_detalle b, nota_debito_cabecera c "
+    				+" where a.codigo = b.codigo_articulo and b.numero_registro_compra = c.id " 
+    				+" and c.numero_registro_compra=? and c.estado='ACTIVO'";
     		PreparedStatement ps1 =c.prepareStatement(sq1);
     		ps1.setLong(1, id);
     		ResultSet rs1=ps1.executeQuery();
@@ -529,7 +535,7 @@ public class ComprasService extends Conexion {
     	NotaDebitoCabecera entidad = new NotaDebitoCabecera();
     	Connection c= ObtenerConexion();
     	try {
-    		String sql = "select * from nota_debito_cabecera where numero_registro_compra = ?";
+    		String sql = "select * from nota_debito_cabecera where numero_registro_compra = ? and estado ='ACTIVO'";
     		PreparedStatement ps= c.prepareStatement(sql);
     		ps.setLong(1, id);
     		ResultSet rs= ps.executeQuery();

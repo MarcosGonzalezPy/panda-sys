@@ -20,7 +20,21 @@ public class FacturaCabecera {
 	private String usuario;
 	private String estado;
 	private String cajero;
+	private String nc;
+	private Long monto;
 	
+	public String getNc() {
+		return nc;
+	}
+	public void setNc(String nc) {
+		this.nc = nc;
+	}
+	public Long getMonto() {
+		return monto;
+	}
+	public void setMonto(Long monto) {
+		this.monto = monto;
+	}
 	public String getCondicionPago() {
 		return condicionPago;
 	}

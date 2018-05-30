@@ -116,7 +116,7 @@ public class VentasResource {
 	}
 	
 	@GET
-	@Path("registrar-pago")
+	@Path("facturar")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response registrarPago(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException {
 		VentasService ventasService = new VentasService();
@@ -125,7 +125,7 @@ public class VentasResource {
 			ObjectMapper mapper = new ObjectMapper();
 			registrarPago = mapper.readValue(paramJson, RegistrarPago.class);
 		}
-		String result = ventasService.registrarPago(registrarPago);
+		String result = ventasService.facturar(registrarPago);
 		Gson gson = new Gson();
 		Map<String, String> resultado = ImmutableMap.of("respuesta",result);
 		String json = gson.toJson(resultado);

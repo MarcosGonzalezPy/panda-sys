@@ -7,7 +7,7 @@ public class RegistrarPago {
 	private String numeroFactura;
 	private String condicionCompra;
 	private Integer cuotas;
-	private String plazo;
+	private Integer plazo;
 	private String timbrado;
 	private String caja;
 	private Integer medioPago;
@@ -88,10 +88,10 @@ public class RegistrarPago {
 	public void setCuotas(Integer cuotas) {
 		this.cuotas = cuotas;
 	}
-	public String getPlazo() {
+	public Integer getPlazo() {
 		return plazo;
 	}
-	public void setPlazo(String plazo) {
+	public void setPlazo(Integer plazo) {
 		this.plazo = plazo;
 	}
 }

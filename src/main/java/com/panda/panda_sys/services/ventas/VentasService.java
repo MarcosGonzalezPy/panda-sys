@@ -117,18 +117,18 @@ public class VentasService extends Conexion {
 
 	public List<FacturaCabecera> listarFacturas(FacturaCabecera param) throws SQLException {
 		List<FacturaCabecera> lista = new ArrayList<FacturaCabecera>();
-		String sql = " select * from factura_cabecera " + " where  sucursal is not null ";
+		String sql = " select (select sum(total) from factura_detalle where factura_id = fc.numero_factura group by factura_id)monto,fc.* from factura_cabecera fc ";
 		if (param.getNumeroFactura() != null && !param.getNumeroFactura().equals("")) {
-			sql = sql + " and numero_factura like '%" + param.getNumeroFactura() + "%' ";
+			sql = sql + " and fc.numero_factura like '%" + param.getNumeroFactura() + "%' ";
 		}
 		if (param.getCliente() != null && !param.getCliente().equals("")) {
-			sql = sql + " and cliente = '" + param.getCliente() + "' ";
+			sql = sql + " and fc.cliente = '" + param.getCliente() + "' ";
 		}
 		if (param.getEstado() != null && !param.getEstado().equals("")) {
-			sql = sql + " and estado = '" + param.getEstado() + "' ";
+			sql = sql + " and fc.estado = '" + param.getEstado() + "' ";
 		}
 		Statement statement = con.ObtenerConexion().createStatement();
-		sql+=" order by numero_factura desc";
+		sql+=" order by fc.numero_factura desc";
 		rs = statement.executeQuery(sql);
 		while (rs.next()) {
 			FacturaCabecera entidad = new FacturaCabecera();
@@ -148,6 +148,8 @@ public class VentasService extends Conexion {
 			entidad.setEstado(rs.getString("estado"));
 			entidad.setCodigoPersona(rs.getInt("codigo_persona"));
 			entidad.setCajero(rs.getString("cajero"));
+			entidad.setNc(rs.getString("nc"));
+			entidad.setMonto(rs.getLong("monto"));
 			lista.add(entidad);
 		}
 		return lista;
@@ -196,172 +198,172 @@ public class VentasService extends Conexion {
 		}
 	}
 
-	public String registrarPago(RegistrarPago param) {
-		try {
-			Connection c = ObtenerConexion();
-			c.setAutoCommit(false);
-			Long codigoMedioPago = null;
-			String suma = null;
-			String sql = "select sum(total) from factura_detalle where factura_id = ?";
-			PreparedStatement ps = c.prepareStatement(sql);
-			ps.setString(1, param.getNumeroFactura());
-			ResultSet rs = ps.executeQuery();
-			while(rs.next()){
-				suma = rs.getString("sum");
-			}
-			String glosa = NumberToLetterConverter.convertNumberToLetter(suma);
-			if (param.getCondicionCompra().equals("CONTADO")) {
-				List<FormaPago> listaFormaPago = param.getListaFormaPago();
-				for (FormaPago fp : listaFormaPago) {
-					Secuencia secuencia = new Secuencia();
-					codigoMedioPago = Long.parseLong(secuencia.getSecuencia("fondo_seq"));
-					String sql1 = " insert into fondo (codigo,  monto ,  tipo,  marca_tarjeta,  estado,documento , numero_documento, fecha)"
-							+ "values (?,?,?,?,?,?,?,?)";
-					PreparedStatement p1 = c.prepareStatement(sql1);
-					p1.setLong(1, codigoMedioPago);
-					p1.setLong(2, fp.getImporte());
-					p1.setString(3, fp.getMedioPago());
-					p1.setString(4, fp.getMarcaTarjeta());
-					p1.setString(5, "ACTIVO");
-					p1.setString(6, "FACTU");
-					p1.setString(7, param.getNumeroFactura());
-					p1.setDate(8, new Date(System.currentTimeMillis()));
-					p1.execute();
-				}
-				String sql2 = " update factura_cabecera set estado='COBRADO', timbrado= ?, "
-						+ "caja= ?,condicion_compra=?, medio_pago=?, cuotas=?, cajero=? , glosa=? where numero_factura= ?";
-				PreparedStatement p2 = c.prepareStatement(sql2);
-				p2.setString(1, param.getTimbrado());
-				p2.setLong(2, Long.parseLong(param.getCaja()));
-				p2.setString(3, param.getCondicionCompra());
-				p2.setLong(4, codigoMedioPago);
-				p2.setInt(5, (param.getCuotas() == null) ? 0 : param.getCuotas());
-				p2.setString(6, param.getCajero());
-				p2.setString(7, glosa);
-				p2.setString(8, param.getNumeroFactura());
-				p2.execute();
-			} else if (param.getCondicionCompra().equals("CREDITO")) {
-				String medidaPlazo;
-				Integer cantidad;
-				Date fechaPago = new Date(System.currentTimeMillis());
-				if (param.getPlazo() != null && param.getPlazo() != null) {
-					cantidad = buscarNumero(param.getPlazo());
-					if (!(param.getPlazo().toUpperCase().indexOf("DIA") == -1)) {
-						medidaPlazo = "D";
-						fechaPago = sumarFecha(new Date(System.currentTimeMillis()), cantidad, 0);
-					} else if (!(param.getPlazo().toUpperCase().indexOf("MES") == -1)) {
-						medidaPlazo = "M";
-						fechaPago = sumarFecha(new Date(System.currentTimeMillis()), 0, cantidad);
-					} else {
-						throw new PandaException("No se reconoce el tipo de plazo.");
-					}
-
-				}
-				if (param.getCuotas() != null && param.getCuotas() > 0) {
-					Long montoFraccionado = param.getMonto() / param.getCuotas();
-					Long diferencia = param.getMonto() - (param.getCuotas() * montoFraccionado);
-					for (int i = 1; i <= param.getCuotas(); i++) {
-						Long montoFraccionadoAplicar = 0L;
-						if (i == 1) {
-							montoFraccionadoAplicar = montoFraccionado + diferencia;
-						} else {
-							montoFraccionadoAplicar = montoFraccionado;
-						}
-						String glosaFC = NumberToLetterConverter.convertNumberToLetter(montoFraccionadoAplicar.toString());
-						String sql3 = "insert into fondo_credito(estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero, glosa)"
-								+ "values('PENDIENTE', current_date, ?,?,?,?,?,'FACTU',?,?)";
-						PreparedStatement p3 = c.prepareStatement(sql3);
-						p3.setDate(1, fechaPago);
-						p3.setInt(2, param.getCliente());
-						p3.setString(3, i + " de " + param.getCuotas());
-						p3.setLong(4, montoFraccionadoAplicar);
-						p3.setString(5, param.getSucursal());
-						p3.setString(6, param.getNumeroFactura());
-						p3.setString(7, glosaFC);
-						p3.execute();
-					}
-
-				} else {
-					String glosaFC = NumberToLetterConverter.convertNumberToLetter(param.getMonto().toString());
-					String sql3 = "insert into fondo_credito(estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero, glosa)"
-							+ "values('PENDIENTE', current_date, ?,?,?,?,?,'FACTU',?,?)";
-					PreparedStatement p3 = c.prepareStatement(sql3);
-					p3.setDate(1, fechaPago);
-					p3.setInt(2, param.getCliente());
-					p3.setString(3, "1 de 1");
-					p3.setLong(4, param.getMonto());
-					p3.setString(5, param.getSucursal());
-					p3.setString(6, param.getNumeroFactura());
-					p3.setString(7, glosaFC);
-					p3.execute();
-				}
-				// Actualizar las cabeceras cuando es una compra a creadito
-				String sql2 = " update factura_cabecera set estado='PENDIENTE_PAGO', timbrado= ?, "
-						+ "caja= ?,condicion_compra=?, cuotas=?, cajero=?  where numero_factura= ?";
-				PreparedStatement p2 = c.prepareStatement(sql2);
-				p2.setString(1, param.getTimbrado());
-				p2.setString(2, param.getCaja());
-				p2.setString(3, param.getCondicionCompra());
-				p2.setInt(4, (param.getCuotas() == null) ? 0 : param.getCuotas());
-				p2.setString(5, param.getCajero());
-				p2.setString(6, param.getNumeroFactura());
-				p2.execute();
-			}
-
-			List<FacturaDetalle> listaDetalle = listarDetalle(param.getNumeroFactura());
-			for (FacturaDetalle det : listaDetalle) {
-				if (!det.getTipo().equals("S")) {
-					String sql3 = " update inventario  set cantidad = cantidad -? "
-							+ " where codigo = ? and sucursal =? ";
-					PreparedStatement p3 = c.prepareStatement(sql3);
-					p3.setInt(1, det.getCantidad());
-					Integer codigo = Integer.parseInt(det.getCodigoArticulo());
-					p3.setInt(2, codigo);
-					p3.setString(3, param.getSucursal());
-					p3.execute();
-				}
-			}
-			//TODO
-			Long secuencia = null;
-			String sql4 = " select * from circuito_servicio_cotizacion where numero_factura = ? ";
-			PreparedStatement ps4 = c.prepareStatement(sql4);
-			ps4.setString(1, param.getNumeroFactura());
-			ResultSet rs4 = ps4.executeQuery();
-			while(rs4.next()){
-				secuencia = rs4.getLong("secuencia");
-			}
-			if(secuencia != null){
-				Long paso= null;
-				String sql0 = "select max(paso) from circuito_servicio where secuencia =? ";
-	    		PreparedStatement ps0 =c.prepareStatement(sql0);
-	    		ps0.setLong(1, secuencia);
-	    		ResultSet rs0 = ps0.executeQuery();
-	    		while(rs0.next()){
-	    			paso= rs0.getLong("max");
-	    		}
-	    		
-	    		String sql5 ="update circuito_servicio set es_ultimo = 'N' where paso=? and secuencia =?";
-	    		PreparedStatement ps5 = c.prepareStatement(sql5);
-	    		ps5.setLong(1, paso);
-	    		ps5.setLong(2, secuencia);
-	    		ps5.execute();
-	    		
-	    		String sql6= "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha, es_ultimo) "
-	    				+ "values (?,?,?,?,?,current_date, 'S');";	
-	    		PreparedStatement ps6=c.prepareStatement(sql6); 
-	    		ps6.setLong(1, secuencia);
-	    		ps6.setString(2,"PAGADO");
-	    		ps6.setLong(3, paso+1);
-	    		ps6.setString(4, param.getSucursal());
-	    		ps6.setString(5, param.getCajero());
-	    		ps6.execute();
-			}
-			c.commit();
-		} catch (Exception e) {
-			return "error: " + e.getMessage();
-		}
-		return "ok";
-	}
+//	public String registrarPago(RegistrarPago param) {
+//		try {
+//			Connection c = ObtenerConexion();
+//			c.setAutoCommit(false);
+//			Long codigoMedioPago = null;
+//			String suma = null;
+//			String sql = "select sum(total) from factura_detalle where factura_id = ?";
+//			PreparedStatement ps = c.prepareStatement(sql);
+//			ps.setString(1, param.getNumeroFactura());
+//			ResultSet rs = ps.executeQuery();
+//			while(rs.next()){
+//				suma = rs.getString("sum");
+//			}
+//			String glosa = NumberToLetterConverter.convertNumberToLetter(suma);
+//			if (param.getCondicionCompra().equals("CONTADO")) {
+//				List<FormaPago> listaFormaPago = param.getListaFormaPago();
+//				for (FormaPago fp : listaFormaPago) {
+//					Secuencia secuencia = new Secuencia();
+//					codigoMedioPago = Long.parseLong(secuencia.getSecuencia("fondo_seq"));
+//					String sql1 = " insert into fondo (codigo,  monto ,  tipo,  marca_tarjeta,  estado,documento , numero_documento, fecha)"
+//							+ "values (?,?,?,?,?,?,?,?)";
+//					PreparedStatement p1 = c.prepareStatement(sql1);
+//					p1.setLong(1, codigoMedioPago);
+//					p1.setLong(2, fp.getImporte());
+//					p1.setString(3, fp.getMedioPago());
+//					p1.setString(4, fp.getMarcaTarjeta());
+//					p1.setString(5, "ACTIVO");
+//					p1.setString(6, "FACTU");
+//					p1.setString(7, param.getNumeroFactura());
+//					p1.setDate(8, new Date(System.currentTimeMillis()));
+//					p1.execute();
+//				}
+//				String sql2 = " update factura_cabecera set estado='COBRADO', timbrado= ?, "
+//						+ "caja= ?,condicion_compra=?, medio_pago=?, cuotas=?, cajero=? , glosa=? where numero_factura= ?";
+//				PreparedStatement p2 = c.prepareStatement(sql2);
+//				p2.setString(1, param.getTimbrado());
+//				p2.setLong(2, Long.parseLong(param.getCaja()));
+//				p2.setString(3, param.getCondicionCompra());
+//				p2.setLong(4, codigoMedioPago);
+//				p2.setInt(5, (param.getCuotas() == null) ? 0 : param.getCuotas());
+//				p2.setString(6, param.getCajero());
+//				p2.setString(7, glosa);
+//				p2.setString(8, param.getNumeroFactura());
+//				p2.execute();
+//			} else if (param.getCondicionCompra().equals("CREDITO")) {
+//				String medidaPlazo;
+//				Integer cantidad;
+//				Date fechaPago = new Date(System.currentTimeMillis());
+//				if (param.getPlazo() != null && param.getPlazo() != null) {
+//					cantidad = buscarNumero(param.getPlazo());
+//					if (!(param.getPlazo().toUpperCase().indexOf("DIA") == -1)) {
+//						medidaPlazo = "D";
+//						fechaPago = sumarFecha(new Date(System.currentTimeMillis()), cantidad, 0);
+//					} else if (!(param.getPlazo().toUpperCase().indexOf("MES") == -1)) {
+//						medidaPlazo = "M";
+//						fechaPago = sumarFecha(new Date(System.currentTimeMillis()), 0, cantidad);
+//					} else {
+//						throw new PandaException("No se reconoce el tipo de plazo.");
+//					}
+//
+//				}
+//				if (param.getCuotas() != null && param.getCuotas() > 0) {
+//					Long montoFraccionado = param.getMonto() / param.getCuotas();
+//					Long diferencia = param.getMonto() - (param.getCuotas() * montoFraccionado);
+//					for (int i = 1; i <= param.getCuotas(); i++) {
+//						Long montoFraccionadoAplicar = 0L;
+//						if (i == 1) {
+//							montoFraccionadoAplicar = montoFraccionado + diferencia;
+//						} else {
+//							montoFraccionadoAplicar = montoFraccionado;
+//						}
+//						String glosaFC = NumberToLetterConverter.convertNumberToLetter(montoFraccionadoAplicar.toString());
+//						String sql3 = "insert into fondo_credito(estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero, glosa)"
+//								+ "values('PENDIENTE', current_date, ?,?,?,?,?,'FACTU',?,?)";
+//						PreparedStatement p3 = c.prepareStatement(sql3);
+//						p3.setDate(1, fechaPago);
+//						p3.setInt(2, param.getCliente());
+//						p3.setString(3, i + " de " + param.getCuotas());
+//						p3.setLong(4, montoFraccionadoAplicar);
+//						p3.setString(5, param.getSucursal());
+//						p3.setString(6, param.getNumeroFactura());
+//						p3.setString(7, glosaFC);
+//						p3.execute();
+//					}
+//
+//				} else {
+//					String glosaFC = NumberToLetterConverter.convertNumberToLetter(param.getMonto().toString());
+//					String sql3 = "insert into fondo_credito(estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero, glosa)"
+//							+ "values('PENDIENTE', current_date, ?,?,?,?,?,'FACTU',?,?)";
+//					PreparedStatement p3 = c.prepareStatement(sql3);
+//					p3.setDate(1, fechaPago);
+//					p3.setInt(2, param.getCliente());
+//					p3.setString(3, "1 de 1");
+//					p3.setLong(4, param.getMonto());
+//					p3.setString(5, param.getSucursal());
+//					p3.setString(6, param.getNumeroFactura());
+//					p3.setString(7, glosaFC);
+//					p3.execute();
+//				}
+//				// Actualizar las cabeceras cuando es una compra a creadito
+//				String sql2 = " update factura_cabecera set estado='PENDIENTE_PAGO', timbrado= ?, "
+//						+ "caja= ?,condicion_compra=?, cuotas=?, cajero=?  where numero_factura= ?";
+//				PreparedStatement p2 = c.prepareStatement(sql2);
+//				p2.setString(1, param.getTimbrado());
+//				p2.setString(2, param.getCaja());
+//				p2.setString(3, param.getCondicionCompra());
+//				p2.setInt(4, (param.getCuotas() == null) ? 0 : param.getCuotas());
+//				p2.setString(5, param.getCajero());
+//				p2.setString(6, param.getNumeroFactura());
+//				p2.execute();
+//			}
+//
+//			List<FacturaDetalle> listaDetalle = listarDetalle(param.getNumeroFactura());
+//			for (FacturaDetalle det : listaDetalle) {
+//				if (!det.getTipo().equals("S")) {
+//					String sql3 = " update inventario  set cantidad = cantidad -? "
+//							+ " where codigo = ? and sucursal =? ";
+//					PreparedStatement p3 = c.prepareStatement(sql3);
+//					p3.setInt(1, det.getCantidad());
+//					Integer codigo = Integer.parseInt(det.getCodigoArticulo());
+//					p3.setInt(2, codigo);
+//					p3.setString(3, param.getSucursal());
+//					p3.execute();
+//				}
+//			}
+//			//TODO
+//			Long secuencia = null;
+//			String sql4 = " select * from circuito_servicio_cotizacion where numero_factura = ? ";
+//			PreparedStatement ps4 = c.prepareStatement(sql4);
+//			ps4.setString(1, param.getNumeroFactura());
+//			ResultSet rs4 = ps4.executeQuery();
+//			while(rs4.next()){
+//				secuencia = rs4.getLong("secuencia");
+//			}
+//			if(secuencia != null){
+//				Long paso= null;
+//				String sql0 = "select max(paso) from circuito_servicio where secuencia =? ";
+//	    		PreparedStatement ps0 =c.prepareStatement(sql0);
+//	    		ps0.setLong(1, secuencia);
+//	    		ResultSet rs0 = ps0.executeQuery();
+//	    		while(rs0.next()){
+//	    			paso= rs0.getLong("max");
+//	    		}
+//	    		
+//	    		String sql5 ="update circuito_servicio set es_ultimo = 'N' where paso=? and secuencia =?";
+//	    		PreparedStatement ps5 = c.prepareStatement(sql5);
+//	    		ps5.setLong(1, paso);
+//	    		ps5.setLong(2, secuencia);
+//	    		ps5.execute();
+//	    		
+//	    		String sql6= "insert into circuito_servicio (secuencia,estado,paso,lugar,responsable,fecha, es_ultimo) "
+//	    				+ "values (?,?,?,?,?,current_date, 'S');";	
+//	    		PreparedStatement ps6=c.prepareStatement(sql6); 
+//	    		ps6.setLong(1, secuencia);
+//	    		ps6.setString(2,"PAGADO");
+//	    		ps6.setLong(3, paso+1);
+//	    		ps6.setString(4, param.getSucursal());
+//	    		ps6.setString(5, param.getCajero());
+//	    		ps6.execute();
+//			}
+//			c.commit();
+//		} catch (Exception e) {
+//			return "error: " + e.getMessage();
+//		}
+//		return "ok";
+//	}
 
 	public Integer buscarNumero(String cadena) {
 		String cad = "";
@@ -682,6 +684,96 @@ public class VentasService extends Conexion {
 			c.close();
 		}
 		return lista;
+	}
+		
+	public String facturar(RegistrarPago param) {
+		try {
+			Connection c = ObtenerConexion();
+			c.setAutoCommit(false);
+
+			String suma = null;
+			String sql = "select sum(total) from factura_detalle where factura_id = ?";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, param.getNumeroFactura());
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				suma = rs.getString("sum");
+			}
+			String glosa = NumberToLetterConverter.convertNumberToLetter(suma);
+			
+			String sql2 = " update factura_cabecera set estado='FACTURADO', timbrado= ?, "
+					+ "condicion_compra=?, cuotas=?, glosa=? where numero_factura= ?";
+			PreparedStatement p2 = c.prepareStatement(sql2);
+			p2.setString(1, param.getTimbrado());
+			p2.setString(2, param.getCondicionCompra());
+			p2.setInt(3, (param.getCuotas() == null) ? 0 : param.getCuotas());
+			p2.setString(4, glosa);
+			p2.setString(5, param.getNumeroFactura());
+			p2.execute();
+			
+			Date fechaVencimiento = new Date(System.currentTimeMillis());
+			if(param.getPlazo()!= null && param.getPlazo()>0){
+				fechaVencimiento = sumarFecha(new Date(System.currentTimeMillis()), param.getPlazo(), 0);
+			}
+			
+			if(param.getCuotas() != null && param.getCuotas() > 0){
+				Long montoFraccionado = param.getMonto() / param.getCuotas();
+				Long diferencia = param.getMonto() - (param.getCuotas() * montoFraccionado);
+				for (int i = 1; i <= param.getCuotas(); i++) {
+					Long montoFraccionadoAplicar = 0L;
+					if (i == 1) {
+						montoFraccionadoAplicar = montoFraccionado + diferencia;
+					} else {
+						montoFraccionadoAplicar = montoFraccionado;
+					}
+					String glosaFC = NumberToLetterConverter
+							.convertNumberToLetter(montoFraccionadoAplicar.toString());
+					String sql3 = "insert into fondo_credito(estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero, glosa)"
+							+ "values('PENDIENTE', current_date, ?,?,?,?,?,'FACTU',?,?)";
+					PreparedStatement p3 = c.prepareStatement(sql3);
+					p3.setDate(1, fechaVencimiento);
+					p3.setInt(2, param.getCliente());
+					p3.setString(3, i + " de " + param.getCuotas());
+					p3.setLong(4, montoFraccionadoAplicar);
+					p3.setString(5, param.getSucursal());
+					p3.setString(6, param.getNumeroFactura());
+					p3.setString(7, glosaFC);
+					p3.execute();
+				}
+			}else{
+				String glosaFC = NumberToLetterConverter.convertNumberToLetter(param.getMonto().toString());
+				String sql3 = "insert into fondo_credito(estado, fecha, fecha_vencimiento, cliente, numero, monto, sucursal, documento, documento_numero, glosa)"
+						+ "values('PENDIENTE', current_date, ?,?,?,?,?,'FACTU',?,?)";
+				PreparedStatement p3 = c.prepareStatement(sql3);
+				p3.setDate(1, fechaVencimiento);
+				p3.setInt(2, param.getCliente());
+				p3.setString(3, "1 de 1");
+				p3.setLong(4, param.getMonto());
+				p3.setString(5, param.getSucursal());
+				p3.setString(6, param.getNumeroFactura());
+				p3.setString(7, glosaFC);
+				p3.execute();				
+			}
+					
+			List<FacturaDetalle> listaDetalle = listarDetalle(param.getNumeroFactura());
+			for (FacturaDetalle det : listaDetalle) {
+				if (!det.getTipo().equals("S")) {
+					String sql3 = " update inventario  set cantidad = cantidad -? "
+							+ " where codigo = ? and sucursal =? ";
+					PreparedStatement p3 = c.prepareStatement(sql3);
+					p3.setInt(1, det.getCantidad());
+					Integer codigo = Integer.parseInt(det.getCodigoArticulo());
+					p3.setInt(2, codigo);
+					p3.setString(3, param.getSucursal());
+					p3.execute();
+				}
+			}
+			c.commit();
+		} catch (Exception e) {
+			System.out.println("ERROR: "+e.getMessage());
+			return "error: " + e.getMessage();
+		}
+		return "ok";
 	}
 
 }
