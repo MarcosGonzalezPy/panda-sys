@@ -209,6 +209,18 @@ public class VentasResource {
 		String json = gson.toJson(lista);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
+	
+	@GET
+	@Path("anular-nota-credito/{id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response anularNotaCredito(@PathParam("id") Long id) throws SQLException {		
+		VentasService ventasService = new VentasService();
+		String result = ventasService.anularNotaCredito(id);
+		Gson gson = new Gson();
+		Map<String, String> resultado = ImmutableMap.of("respuesta",result);
+		String json = gson.toJson(resultado);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD").build();
+	}
 
 }
 	

@@ -15,7 +15,7 @@ public class FondoCredito {
 	private Date fechaPago;
 	private Long dias;
 	private String documento;
-	private String numeroDocumento;
+	private String documentoNumero;
 	private String glosa;
 	private String codigoCheque;
 	
@@ -85,11 +85,12 @@ public class FondoCredito {
 	public void setDocumento(String documento) {
 		this.documento = documento;
 	}
-	public String getNumeroDocumento() {
-		return numeroDocumento;
+
+	public String getDocumentoNumero() {
+		return documentoNumero;
 	}
-	public void setNumeroDocumento(String numeroDocumento) {
-		this.numeroDocumento = numeroDocumento;
+	public void setDocumentoNumero(String documentoNumero) {
+		this.documentoNumero = documentoNumero;
 	}
 	public String getGlosa() {
 		return glosa;

@@ -387,69 +387,73 @@ public class VentasService extends Conexion {
 
 	public String anularFactura(String id) throws SQLException {
 		Connection c = ObtenerConexion();
-		try {
-			
+		try {			
 			c.setAutoCommit(false);
-			FacturaCabecera facturaCabecera = new FacturaCabecera();
 			String sql0 = " select * from factura_cabecera  where  numero_factura = ? ";
 			PreparedStatement p0 = c.prepareStatement(sql0);
 			p0.setString(1, id);
 			ResultSet rs0 = p0.executeQuery();
+			String estadoCabera= "";
+			String sucursal = "";
+			String nc = "";
 			while(rs0.next()){
-				facturaCabecera.setSucursal(rs0.getString("sucursal"));
-				facturaCabecera.setCodigoPersona(rs0.getInt("codigo_persona"));
-				facturaCabecera.setCliente(rs0.getString("cliente"));
-				facturaCabecera.setCondicionCompra(rs0.getString("condicion_compra"));
+				estadoCabera = rs0.getString("estado");
+				sucursal = rs0.getString("sucursal");
+				nc = rs0.getString("nc");
 			}
-				
+			if(nc.equals("S")){
+				throw new  PandaException("No se puede anular una factura con Nota de Credito.");
+			}
+			
 			String sql = " update factura_cabecera set estado = 'ANULADO' where numero_factura = ?";
 			PreparedStatement p = c.prepareStatement(sql);
 			p.setString(1, id);
 			p.executeUpdate();
-			String sql2 = " update fondo_credito set estado = 'ANULADO' where documento = 'FACTU' and documento_numero = ?";
-			PreparedStatement p2 = c.prepareStatement(sql2);
-			p2.setString(1, id);
-			p2.executeUpdate();
-			String sql3 = " update fondo set estado = 'ANULADO' where  numero_documento = ? and documento = 'FACTU' ";
-			PreparedStatement p3 = c.prepareStatement(sql3);
-			p3.setString(1, id);			
-			p3.executeUpdate();
-			
-			String sql4 = " select * from factura_detalle where factura_id = ? ";
-			PreparedStatement p4 = c.prepareStatement(sql4);
-			p4.setString(1, id);
-			p4.executeQuery();
-			ResultSet rs4 = p4.executeQuery();
-			Long monto = 0L;
-			while(rs4.next()){
-				monto = monto + rs4.getLong("total");
-				String tipo = rs4.getString("tipo");
-				if(tipo.equals("P")){
-					Integer cantidad = rs4.getInt("cantidad");
-					Integer codigoArticulo = rs4.getInt("codigo_articulo");
-					String sql5 =" update inventario set cantidad =+? where codigo = ? and sucursal = ? ";
-					PreparedStatement p5 = c.prepareStatement(sql5);
-					p5.setInt(1, cantidad);
-					p5.setInt(2, codigoArticulo);
-					p5.setString(3, facturaCabecera.getSucursal());
-					p5.executeUpdate();
+						
+			if(estadoCabera.equals("FACTURADO")){
+				String sqlA = "select * from fondo_credito where documento = 'FACTU' and documento_numero = ? ";
+				PreparedStatement psA = c.prepareStatement(sqlA);
+				psA.setString(1, id);
+				ResultSet rsA = psA.executeQuery();
+				String estadoFondoCredito = ""; 
+				while(rsA.next()){
+					estadoFondoCredito= rsA.getString("estado");
+					if(!estadoFondoCredito.equals("PENDIENTE")){
+						throw new PandaException("Debe anular primero el pago de la Venta.");
+					}
+				}				
+				String sql2 = " update fondo_credito set estado = 'ANULADO' where documento = 'FACTU' and documento_numero = ?";
+				PreparedStatement p2 = c.prepareStatement(sql2);
+				p2.setString(1, id);
+				p2.executeUpdate();
+				
+				String sql4 = " select * from factura_detalle where factura_id = ? ";
+				PreparedStatement p4 = c.prepareStatement(sql4);
+				p4.setString(1, id);
+				p4.executeQuery();
+				ResultSet rs4 = p4.executeQuery();
+				Long monto = 0L;
+				while(rs4.next()){
+					monto = monto + rs4.getLong("total");
+					String tipo = rs4.getString("tipo");
+					if(tipo.equals("P")){
+						Integer cantidad = rs4.getInt("cantidad");
+						Integer codigoArticulo = rs4.getInt("codigo_articulo");
+						String sql5 =" update inventario set cantidad =cantidad+? where codigo = ? and sucursal = ? ";
+						PreparedStatement p5 = c.prepareStatement(sql5);
+						p5.setInt(1, cantidad);
+						p5.setInt(2, codigoArticulo);
+						p5.setString(3, sucursal);
+						p5.executeUpdate();
+					}
 				}
 			}
-			if(facturaCabecera.getCondicionCompra().equals("CONTADO")){
-				String sql6 = " insert into fondo_debito(estado,fecha,cliente,monto,sucursal,documento,documento_numero, numero)"
-						+ " values('PENDIENTE',current_date,?,?,?,'ANUFAC',?,?) ";
-				PreparedStatement p6=c.prepareStatement(sql6);
-				p6.setInt(1, facturaCabecera.getCodigoPersona());
-				p6.setLong(2, monto);
-				p6.setString(3, facturaCabecera.getSucursal());
-				p6.setString(4, facturaCabecera.getNumeroFactura());
-				p6.setInt(5, 1);
-				p6.execute();
-			}
+		
 			c.commit();			
 		} catch (Exception e) {
+			System.out.println("ERROR: " +e.getMessage());
 			c.close();
-			return "error";
+			return e.getMessage();
 		}
 		return "ok";
 	}
@@ -596,13 +600,14 @@ public class VentasService extends Conexion {
 				}
 				if(ntd.getTipo().equals("P")){
 					Long diferenciaCantidad = cantidadFactura-ntd.getCantidad();
+					/** SE CONTROLA SI EXISTE DIFERENCIA DE CANTIDAD **/
 					if(diferenciaCantidad>0){					
-						String sql5 =" update inventario set maximo =maximo+? where codigo = ? and sucursal =? ";
-						PreparedStatement ps5 = c.prepareStatement(sql5);
+						String sql5 =" update inventario set cantidad =cantidad+? where codigo = ? and sucursal =? ";
+						PreparedStatement ps5 = c.prepareStatement(sql5);	
 						ps5.setLong(1, diferenciaCantidad);
 						ps5.setLong(2, Long.parseLong(ntd.getCodigoArticulo()));
 						ps5.setString(3, ntc.getSucursal());
-						ps5.executeQuery();
+						ps5.execute();
 					}
 										
 				}
@@ -618,7 +623,7 @@ public class VentasService extends Conexion {
 			ps6.setLong(4,Long.parseLong(fc.getNumeroFactura()));
 			ps6.execute();
 			
-			String sql7=" update factura_cabecera set estado = 'CON NC' where numero_factura = ?";
+			String sql7=" update factura_cabecera set nc = 'S' where numero_factura = ?";
 			PreparedStatement ps7 =c.prepareStatement(sql7);
 			ps7.setString(1, ntc.getNumeroFactura());
 			ps7.execute();
@@ -772,6 +777,80 @@ public class VentasService extends Conexion {
 		} catch (Exception e) {
 			System.out.println("ERROR: "+e.getMessage());
 			return "error: " + e.getMessage();
+		}
+		return "ok";
+	}
+	
+	public String anularNotaCredito(Long numeroFactura) throws SQLException{
+		Connection c = ObtenerConexion();
+		try {
+			c.setAutoCommit(false);
+			String sql1 = "update nota_credito_cabecera set estado = 'ANULADO' where numero_factura=?";
+			PreparedStatement ps1 = c.prepareStatement(sql1);
+			ps1.setString(1, numeroFactura.toString());
+			ps1.execute();
+			
+			String sql2 = "select * from  fondo_debito where documento = 'NOTACRE'"
+					+ " and estado = 'PENDIENTE' and documento_numero =?";
+			PreparedStatement ps2 = c.prepareStatement(sql2);
+			ps2.setLong(1, numeroFactura);
+			ResultSet rs2 = ps2.executeQuery();
+			String estadoFondoDebito = "";
+			String sucursal = "";
+			while(rs2.next()){
+				estadoFondoDebito = rs2.getString("estado");
+				sucursal = rs2.getString("sucursal");
+				if(!estadoFondoDebito.equals("PENDIENTE")){
+					throw new PandaException("Se debe revertir primero el pago de la Nota Credito");
+				}
+			}
+			String sql3 = "update fondo_debito set estado ='ANULADO'  where documento = 'NOTACRE'"
+					+ " and estado = 'PENDIENTE' and documento_numero =?";
+			PreparedStatement ps3 = c.prepareStatement(sql3);
+			ps3.setLong(1, numeroFactura);
+			ps3.execute();
+			
+			String sql4 = "update factura_cabecera set nc = null where numero_factura = ?";
+			PreparedStatement ps4 = c.prepareStatement(sql4);
+			ps4.setString(1, numeroFactura.toString());
+			ps4.execute();
+			
+			String sql5="select * from nota_credito_detalle where factura_id=?";
+			PreparedStatement ps5=c.prepareStatement(sql5);
+			ps5.setString(1, numeroFactura.toString());
+			ResultSet rs5 =ps5.executeQuery();			
+			while(rs5.next()){
+				String tipo=rs5.getString("tipo");
+				if(tipo.equals("P")){
+					Long cantidadNotaCredito=rs5.getLong("cantidad");
+					Long articuloNotaCredito =rs5.getLong("codigo_articulo");
+					String sql6= "select * from factura_detalle where factura_id = ?"
+							+ " and codigo_articulo = ?";
+					PreparedStatement ps6 = c.prepareStatement(sql6);
+					ps6.setString(1, numeroFactura.toString());
+					ps6.setLong(2, articuloNotaCredito);
+					ResultSet rs6 =ps6.executeQuery();
+					while(rs6.next()){
+						Long cantidadFactura = rs6.getLong("cantidad");
+						Long diferenciaCantidad = cantidadFactura-cantidadNotaCredito;
+						if(diferenciaCantidad>0){
+							String sql7 =" update inventario set cantidad =cantidad+? where codigo = ? and sucursal =? ";
+							PreparedStatement ps7 = c.prepareStatement(sql7);	
+							ps7.setLong(1, diferenciaCantidad);
+							ps7.setLong(2, articuloNotaCredito);
+							ps7.setString(3, sucursal);
+							ps7.execute();
+						}						
+					}
+				}								
+			}			
+			
+			c.commit();
+			c.close();
+		} catch (Exception e) {
+			System.out.println("ERROR: "+e.getMessage());
+			c.close();
+			return e.getMessage();
 		}
 		return "ok";
 	}
