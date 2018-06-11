@@ -8,7 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.panda.panda_sys.model.FondoCredito;
+import com.panda.panda_sys.model.cobros.Cobros;
+import com.panda.panda_sys.model.cobros.DetalleCobro;
+import com.panda.panda_sys.model.cobros.ReciboCabecera;
 import com.panda.panda_sys.util.Conexion;
+import com.panda.panda_sys.util.NumberToLetterConverter;
+import com.panda.panda_sys.util.Secuencia;
 
 public class CobrosService extends Conexion{
 	
@@ -64,6 +69,75 @@ public class CobrosService extends Conexion{
 			c.close();
 		}
 		return lista;
+	}
+	
+	public String cobrar(Cobros cobros) throws SQLException{
+		ReciboCabecera rc = cobros.getReciboCabecera();
+		List<DetalleCobro> listaDetalleCobro = cobros.getListaDetalleCobro();
+		List<FondoCredito> listaFondoCredito = cobros.getListaFondoCredito();
+		Connection c = ObtenerConexion();
+		try {
+			Long monto = 0l;
+			c.setAutoCommit(false);
+			
+			Secuencia secuencia = new Secuencia();
+			Long sec = Long.parseLong(secuencia.getSecuencia("detalle_cobro_seq"));
+
+			for(DetalleCobro dc: listaDetalleCobro){
+				monto += dc.getImporte();
+				String sql2="INSERT INTO detalle_cobro "
+						+ "(codigo, medio_pago, marca_tarjeta, importe, estado, usuario, fecha) VALUES(?,?,?,?,?,?, current_date)";
+				PreparedStatement ps2=c.prepareStatement(sql2);
+				ps2.setLong(1, sec);
+				ps2.setString(2, dc.getMedioPago());
+				ps2.setString(3, dc.getMarcaTarjeta());
+				ps2.setLong(4, dc.getImporte());
+				ps2.setString(5, "ACTIVO");
+				ps2.setString(6, rc.getCajero());
+				ps2.execute();
+				
+				if(dc.getMedioPago().contains("CRED-")){
+					String documento = dc.getMedioPago().substring(5, dc.getMedioPago().length());
+					String sql5 = "update fondo_debito set estado ='PAGADO' where documento=? and documento_numero =?";
+					PreparedStatement ps6 = c.prepareStatement(sql5);
+					ps6.setString(1, documento);
+					ps6.setLong(2,Long.parseLong(dc.getMarcaTarjeta()));
+					ps6.execute();					
+				}
+			}
+			for(FondoCredito fc: listaFondoCredito){
+				String sql3="UPDATE fondo_credito SET estado='COBRADO', fecha_pago=current_timestamp, dias=(select fecha_vencimiento - current_date from fondo_credito"
+						+ " where codigo=? AND numero=?), "
+						+ "cobro_detalle=? WHERE codigo=? AND numero=? ";
+				PreparedStatement ps3=c.prepareStatement(sql3);
+				ps3.setLong(1, fc.getCodigo());
+				ps3.setString(2, fc.getNumero());
+				ps3.setLong(3, sec);
+				ps3.setLong(4, fc.getCodigo());
+				ps3.setString(5, fc.getNumero());
+				ps3.execute();
+			}
+			String glosa = NumberToLetterConverter.convertNumberToLetter(monto);
+			String sql4="INSERT INTO recibo_cabecera (codigo_persona, nombre_persona, sucursal, caja, cajero, fecha, "
+				+ "estado, codigo_pago, glosa, monto)VALUES(?,?,?,?,?,current_timestamp,'ACTIVO', ?,?,?)";
+			PreparedStatement ps4 =c.prepareStatement(sql4);
+			ps4.setLong(1, rc.getCodigoPersona());
+			ps4.setString(2, rc.getNombrePersona());			
+			ps4.setString(3, rc.getSucursal());
+			ps4.setLong(4, rc.getCaja());
+			ps4.setString(5, rc.getCajero());
+			ps4.setLong(6, sec);
+			ps4.setString(7, glosa);
+			ps4.setLong(8, monto);
+			ps4.execute();
+			
+			c.commit();
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+			return e.getMessage();
+		}
+		c.close();
+		return "OK";
 	}
 
 }

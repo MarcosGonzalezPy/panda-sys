@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -18,7 +19,10 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.FondoCredito;
+import com.panda.panda_sys.model.cobros.Cobros;
 import com.panda.panda_sys.services.cobros.CobrosService;
+
+import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 @Path("cobros/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -38,6 +42,23 @@ public class CobrosResource {
 		lista = cobrosService.listarFondoCredito(fondoCredito);
 		Gson gson = new Gson();
 		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("cobrar")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response cobros(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException {
+		CobrosService cobrosService = new CobrosService();
+		Cobros cobros = new Cobros();
+		if(cobros!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			cobros = mapper.readValue(paramJson, Cobros.class);
+		}
+		String result = cobrosService.cobrar(cobros);
+		Gson gson = new Gson();
+		Map<String, String> resultado = ImmutableMap.of("respuesta",result);
+		String json = gson.toJson(resultado);
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 
