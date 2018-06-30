@@ -8,6 +8,7 @@ import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -20,6 +21,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.FondoCredito;
 import com.panda.panda_sys.model.cobros.Cobros;
+import com.panda.panda_sys.model.cobros.ReciboCabecera;
 import com.panda.panda_sys.services.cobros.CobrosService;
 
 import jersey.repackaged.com.google.common.collect.ImmutableMap;
@@ -56,6 +58,29 @@ public class CobrosResource {
 			cobros = mapper.readValue(paramJson, Cobros.class);
 		}
 		String result = cobrosService.cobrar(cobros);
+		Gson gson = new Gson();
+		Map<String, String> resultado = ImmutableMap.of("respuesta",result);
+		String json = gson.toJson(resultado);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("listar-recibo-cabecera/{codigo}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response listarReciboCabecera(@PathParam("codigo") Long codigo) throws SQLException{
+		CobrosService cobrosService = new CobrosService();
+		List<ReciboCabecera> lista = cobrosService.listarReciboCabecera(codigo);
+		Gson gson = new Gson();
+		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("anular-cobro/{codigo}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response anularCobro(@PathParam("codigo") Long codigo) throws SQLException{
+		CobrosService cobrosService = new CobrosService();
+		String result = cobrosService.anularCobro(codigo);
 		Gson gson = new Gson();
 		Map<String, String> resultado = ImmutableMap.of("respuesta",result);
 		String json = gson.toJson(resultado);

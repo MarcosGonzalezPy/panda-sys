@@ -26,7 +26,7 @@ public class CobrosService extends Conexion{
 			if(fondoCredito.getEstado()!= null && !fondoCredito.getEstado().equals("")){
 				sql += " where estado = ?";
 			}
-			if(fondoCredito.getCliente()!= null && ! fondoCredito.getEstado().equals("")){
+			if(fondoCredito.getCliente()!= null && ! fondoCredito.getCliente().equals("")){
 				String conector = null;
 				if(sql.contains("where")){
 					conector = " and ";
@@ -35,6 +35,16 @@ public class CobrosService extends Conexion{
 				}
 				sql += conector + " cliente= ? ";
 			}
+			if(fondoCredito.getCobroDetalle()!=null && !fondoCredito.getCobroDetalle().equals("")){
+				String conector = null;
+				if(sql.contains("where")){
+					conector = " and ";
+				}else{
+					conector = " where ";
+				}
+				sql += conector + " cobro_detalle= ? ";
+			}
+			
 			PreparedStatement ps= c.prepareStatement(sql);
 			if(fondoCredito.getEstado()!= null && !fondoCredito.getEstado().equals("")){
 				numeroParametro++;
@@ -43,6 +53,10 @@ public class CobrosService extends Conexion{
 			if(fondoCredito.getCliente()!= null && ! fondoCredito.getEstado().equals("")){
 				numeroParametro++;
 				ps.setLong(numeroParametro, fondoCredito.getCliente());
+			}
+			if(fondoCredito.getCobroDetalle()!=null && !fondoCredito.getCobroDetalle().equals("")){
+				numeroParametro++;
+				ps.setLong(numeroParametro, fondoCredito.getCobroDetalle());
 			}
 			
 			ResultSet rs = ps.executeQuery();
@@ -61,6 +75,7 @@ public class CobrosService extends Conexion{
 				entidad.setMonto(rs.getLong("monto"));
 				entidad.setNumero(rs.getString("numero"));
 				entidad.setSucursal(rs.getString("sucursal"));
+				entidad.setCobroDetalle(rs.getLong("cobro_detalle"));
 				lista.add(entidad);
 			}
 			c.close();
@@ -139,5 +154,105 @@ public class CobrosService extends Conexion{
 		c.close();
 		return "OK";
 	}
+	
+	public String anularCobro(Long detalleCobro) throws SQLException{
+		Connection c = ObtenerConexion();
+		try {
+			c.setAutoCommit(false);
+			String sql1 ="update detalle_cobro set estado='ANULADO' where codigo=?";
+			PreparedStatement ps1 =c.prepareStatement(sql1);
+			ps1.setLong(1, detalleCobro);
+			ps1.execute();
+			
+			String sql2="select * from detalle_cobro where codigo = ?";
+			PreparedStatement ps2=c.prepareStatement(sql2);
+			ps2.setLong(1, detalleCobro);
+			ResultSet rs2= ps2.executeQuery();
+			while(rs2.next()){
+				String medioPago = rs2.getString("medio_pago");				
+				if(medioPago.contains("CRED-")){
+					String documento =medioPago.substring(5, medioPago.length());
+					String sql3 = "update fondo_debito set estado ='PENDIENTE' where documento=? and documento_numero =?";
+					PreparedStatement ps3 = c.prepareStatement(sql3);
+					ps3.setString(1, documento);
+					Long marcaTarjeta = Long.parseLong(rs2.getString("marca_tarjeta"));
+					ps3.setLong(2, marcaTarjeta);
+					ps3.execute();	
+					
+				}
+			}
+						
+//			String sql4 ="select * from fondo_credito where cobro_detalle=?";
+//			PreparedStatement ps4=c.prepareStatement(sql4);
+//			ps4.setLong(1, detalleCobro);
+//			ResultSet rs4 = ps4.executeQuery();
+//			while(rs4.next()){
+//				Long codigoFondoCredito = rs4.getLong("codigo");			
+//			}
+			String sql5 ="Update fondo_credito set estado='PENDIENTE', fecha_pago=null, "
+					+ " dias = null, cobro_detalle=null where cobro_detalle=?";
+			PreparedStatement ps5 = c.prepareStatement(sql5);
+			ps5.setLong(1, detalleCobro);
+			ps5.execute();
+			
+			String sql6 = "update recibo_cabecera set estado= 'ANULADO' where codigo_pago=?";
+			PreparedStatement ps6 = c.prepareStatement(sql6);
+			ps6.setLong(1, detalleCobro);
+			ps6.execute();
+			
+			c.commit();
+		} catch (Exception e) {
+			System.out.println("ERROR: " +e.getMessage());
+			return e.getMessage();
+		}
+		c.close();
+		return "OK";
+	}
+	
+	public List<DetalleCobro> listarDetalleCobro(Long codigo) throws SQLException{
+		List<DetalleCobro> lista=new ArrayList<DetalleCobro>();
+		Connection c=ObtenerConexion();
+		try {			
+			String sql1 = "select * from detalle_cobro wherer codigo = ?";
+			PreparedStatement ps1=c.prepareStatement(sql1);
+			ps1.setLong(1, codigo);
+			ResultSet rs1= ps1.executeQuery();
+			while(rs1.next()){
+				DetalleCobro entidad = new DetalleCobro();
+				entidad.setCodigo(rs1.getLong("codigo"));
+				entidad.setEstado(rs1.getString("estado"));
+				entidad.setImporte(rs1.getLong("importa"));
+				entidad.setMarcaTarjeta(rs1.getString("marca_tarjeta"));
+				entidad.setMedioPago(rs1.getString("medio_pago"));
+				lista.add(entidad);
+			}			
+		} catch (Exception e) {
+			System.out.println("ERROR: "+e.getMessage());		
+		}
+		c.close();
+		return lista;
+	} 
+	
+	public List<ReciboCabecera> listarReciboCabecera(Long codigoPago) throws SQLException{
+		List<ReciboCabecera> lista =new ArrayList<ReciboCabecera>();
+		Connection c= ObtenerConexion();
+		try {
+			String sql="select * from recibo_cabecera where codigo_pago = ?";
+			PreparedStatement ps=c.prepareStatement(sql);
+			ps.setLong(1, codigoPago);
+			ResultSet rs=ps.executeQuery();
+			while(rs.next()){
+				ReciboCabecera rc = new ReciboCabecera();
+				rc.setNombrePersona(rs.getString("nombre_persona"));
+				rc.setCodigoPersona(rs.getLong("codigo_persona"));
+				lista.add(rc);
+			}
+		} catch (Exception e) {
+			System.out.println("ERROR: "+e.getMessage());
+		}
+		c.close();
+		return lista;
+	} 
+	 
 
 }

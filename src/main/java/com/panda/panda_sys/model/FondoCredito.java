@@ -17,7 +17,7 @@ public class FondoCredito {
 	private String documento;
 	private String documentoNumero;
 	private String glosa;
-	private String codigoCheque;
+	private Long cobroDetalle;
 	
 	public Long getCodigo() {
 		return codigo;
@@ -39,6 +39,12 @@ public class FondoCredito {
 	}
 	public Date getFechaVencimiento() {
 		return fechaVencimiento;
+	}
+	public Long getCobroDetalle() {
+		return cobroDetalle;
+	}
+	public void setCobroDetalle(Long cobroDetalle) {
+		this.cobroDetalle = cobroDetalle;
 	}
 	public void setFechaVencimiento(Date fechaVencimiento) {
 		this.fechaVencimiento = fechaVencimiento;
@@ -98,11 +104,6 @@ public class FondoCredito {
 	public void setGlosa(String glosa) {
 		this.glosa = glosa;
 	}
-	public String getCodigoCheque() {
-		return codigoCheque;
-	}
-	public void setCodigoCheque(String codigoCheque) {
-		this.codigoCheque = codigoCheque;
-	}
+
 
 }
