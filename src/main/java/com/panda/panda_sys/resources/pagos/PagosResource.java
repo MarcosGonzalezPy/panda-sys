@@ -15,11 +15,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.google.gson.Gson;
 import com.panda.panda_sys.model.Cheques;
 import com.panda.panda_sys.model.FondoDebito;
+import com.panda.panda_sys.model.pagos.Pagos;
+import com.panda.panda_sys.model.pagos.PagosCabecera;
 import com.panda.panda_sys.model.ventas.SaldoCliente;
 import com.panda.panda_sys.services.pagos.PagosService;
 
@@ -79,5 +82,44 @@ public class PagosResource {
 		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
 	}
 	
+	@GET
+	@Path("pagar")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response pagar(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException {
+		PagosService pagosService = new PagosService();
+		Pagos pagos = new Pagos();
+		if(pagos!= null && !paramJson.equals("")&& !paramJson.equals("{}")){
+			ObjectMapper mapper = new ObjectMapper();
+			pagos = mapper.readValue(paramJson, Pagos.class);
+		}
+		String result = pagosService.pagar(pagos);
+		Gson gson = new Gson();
+		Map<String, String> resultado = ImmutableMap.of("respuesta",result);
+		String json = gson.toJson(resultado);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("anular-pago/{codigo}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response anularCobro(@PathParam("codigo") Long codigo) throws SQLException{
+		PagosService pagosService = new PagosService();
+		String result = pagosService.anularPago(codigo);
+		Gson gson = new Gson();
+		Map<String, String> resultado = ImmutableMap.of("respuesta",result);
+		String json = gson.toJson(resultado);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
+	
+	@GET
+	@Path("listar-pagos-cabecera/{codigo}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response listaPagosCabecera(@PathParam("codigo") Long codigo) throws SQLException{
+		PagosService pagosService = new PagosService();
+		List<PagosCabecera> lista = pagosService.listaPagosCabecera(codigo);
+		Gson gson = new Gson();
+		String json = gson.toJson(lista);
+		return Response.ok(json).header("Access-Control-Allow-Origin", "*").build();
+	}
 
 }

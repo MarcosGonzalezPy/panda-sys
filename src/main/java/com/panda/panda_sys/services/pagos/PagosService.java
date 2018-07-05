@@ -12,7 +12,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.panda.panda_sys.model.Cheques;
+import com.panda.panda_sys.model.FondoCredito;
 import com.panda.panda_sys.model.FondoDebito;
+import com.panda.panda_sys.model.pagos.DetallePago;
+import com.panda.panda_sys.model.pagos.Pagos;
+import com.panda.panda_sys.model.pagos.PagosCabecera;
 import com.panda.panda_sys.model.ventas.SaldoCliente;
 import com.panda.panda_sys.util.Conexion;
 import com.panda.panda_sys.util.NumberToLetterConverter;
@@ -212,5 +216,166 @@ public class PagosService extends Conexion{
 			return e.getMessage();
 		}
 		return "OK";
+	}
+	
+	public String pagar(Pagos pagos) throws SQLException{
+		PagosCabecera pc= pagos.getPagosCabecera();
+		List<DetallePago> listaDetallePago = pagos.getListaDetallePago();
+		List<FondoDebito> listaFondoDebito = pagos.getListaFondoDebito();
+		Connection c=ObtenerConexion();
+		try {
+			c.setAutoCommit(false);			
+			Secuencia secuencia = new Secuencia();
+			Long sec = Long.parseLong(secuencia.getSecuencia("detalle_pago_seq"));	
+			Long monto = 0L;
+			for(DetallePago dp: listaDetallePago){				
+				String sql1 ="INSERT INTO detalle_pago(codigo, medio_pago, marca_tarjeta, importe, estado, usuario, fecha)"
+					+ "VALUES(?,?,?,?,?,?, current_date);";
+				PreparedStatement ps1=c.prepareStatement(sql1);
+				ps1.setLong(1, sec);
+				ps1.setString(2, dp.getMedioPago());
+				ps1.setString(3, dp.getMarcaTarjeta());
+				monto+= dp.getImporte();
+				ps1.setLong(4, dp.getImporte());
+				ps1.setString(5, "ACTIVO");
+				ps1.setString(6, pc.getCajero());			
+				ps1.execute();
+				
+				if(dp.getMedioPago().contains("CRED-")){
+					String documento = dp.getMedioPago().substring(5, dp.getMedioPago().length());
+					String sql2 = "update fondo_credito set estado ='COBRADO' where documento=? and documento_numero =?";
+					PreparedStatement ps2 = c.prepareStatement(sql2);
+					ps2.setString(1, documento);
+					ps2.setString(2, dp.getMarcaTarjeta());
+					ps2.execute();					
+				}
+				
+				for(FondoDebito fd: listaFondoDebito){
+					String sql3="update fondo_debito set estado='PAGADO', fecha_pago=current_timestamp, "
+							+ " dias=(select fecha_vencimiento - current_date from fondo_debito where documento=? AND documento_numero=?),"
+							+ " pago_detalle=? where documento=? and documento_numero = ?";
+					PreparedStatement ps3=c.prepareStatement(sql3);
+					ps3.setString(1, fd.getDocumento());
+					ps3.setLong(2, fd.getDocumentoNumero());
+					ps3.setLong(3, sec);
+					ps3.setString(4, fd.getDocumento());
+					ps3.setLong(5, fd.getDocumentoNumero()); 
+					ps3.execute();
+				}
+				
+				String glosa = NumberToLetterConverter.convertNumberToLetter(monto);
+				String sql4="INSERT INTO pago_cabecera (codigo_persona, nombre, sucursal, caja, cajero, fecha, "
+					+ "estado, codigo_pago, glosa, monto)VALUES(?,?,?,?,?,current_timestamp,'ACTIVO', ?,?,?)";
+				PreparedStatement ps4 =c.prepareStatement(sql4);
+				ps4.setLong(1, pc.getCodigoPersona());
+				ps4.setString(2, pc.getNombre());			
+				ps4.setString(3, pc.getSucursal());
+				ps4.setLong(4, pc.getCaja());
+				ps4.setString(5, pc.getCajero());
+				ps4.setLong(6, sec);
+				ps4.setString(7, glosa);
+				ps4.setLong(8, monto);
+				ps4.execute();
+				
+			}					
+			c.commit();
+			c.close();
+		} catch (Exception e) {
+			System.out.println("ERROR: "+e.getMessage());
+			c.close();
+			return "ERROR: "+e.getMessage();
+		}
+		return "OK";
+	}
+	
+	public String anularPago(Long codigo) throws SQLException{
+		Connection c=ObtenerConexion();
+		try {
+			c.setAutoCommit(false);
+			
+			String sql2="select * from detalle_pago where codigo=?";
+			PreparedStatement ps2= c.prepareStatement(sql2);
+			ps2.setLong(1, codigo);
+			ResultSet rs2 = ps2.executeQuery();
+			while(rs2.next()){
+				String medioPago = rs.getString("medio_pago");
+				String marcaTarjeta=rs.getString("marca_tarjeta");
+				if(medioPago.contains("CRED-")){
+					String documento = medioPago.substring(5, medioPago.length());					
+					String sql3 = "update fondo_credito set estado ='PENDIENTE' where documento=? and documento_numero =?";
+					PreparedStatement ps3 = c.prepareStatement(sql3);
+					ps3.setString(1, documento);
+					ps3.setString(2, marcaTarjeta);
+					ps3.execute();					
+				}
+			}	
+			String sql4 = "update fondo_debito set estado ='PENDIENTE', fecha_pago=null, dias=null, pago_detalle=null  where pago_detalle =?";
+			PreparedStatement ps4 =c.prepareStatement(sql4);
+			ps4.setLong(1, codigo);
+			ps4.execute();
+			
+			String sql5 ="update pago_cabecera set estado = 'ANULADO where codigo_pago=? '";
+			PreparedStatement ps5 = c.prepareStatement(sql5);
+			ps5.setLong(1, codigo);
+			ps5.execute();
+			
+			String sql1= " update detalle_pago set estado = 'ANULADO' where codigo=? ";
+			PreparedStatement ps1 =c.prepareStatement(sql1);
+			ps1.setLong(1, codigo);
+			ps1.execute();
+			
+			
+			c.commit();
+			c.close();
+		} catch (Exception e){
+			System.out.println("ERROR: "+e.getMessage());
+			return e.getMessage();
+		}
+		return "OK";
+	}
+	
+	public List<DetallePago> listarDetallePago(Long codigo) throws SQLException{
+		List<DetallePago> lista = new ArrayList<DetallePago>();
+		Connection c= ObtenerConexion();
+		try {
+			String sql=" select * from detalle_pago where codigo = ?";
+			PreparedStatement ps=c.prepareStatement(sql);
+			ps.setLong(1, codigo);
+			ResultSet rs=ps.executeQuery();
+			while(rs.next()){
+				DetallePago entidad = new DetallePago();
+				entidad.setCodigo(rs.getLong("codigo"));
+				entidad.setEstado(rs.getString("estado"));
+				entidad.setFecha(rs.getDate("fecha"));
+				entidad.setImporte(rs.getLong("importe"));
+				entidad.setMarcaTarjeta(rs.getString("marca_tarjeta"));
+				entidad.setMedioPago(rs.getString("medio_pago"));
+				entidad.setUsuario(rs.getString("usuario"));
+				lista.add(entidad);
+			}
+		} catch (Exception e) {
+			System.out.println("ERROR: "+e.getMessage());
+		}
+		return lista;
+	}
+	
+	public List<PagosCabecera> listaPagosCabecera(Long codigoPago) throws SQLException{
+		List<PagosCabecera> lista=new ArrayList<PagosCabecera>();
+		Connection c=ObtenerConexion();
+		try {
+			String sql=" select * from pago_cabecera where codigo_pago = 0 ";
+			PreparedStatement ps=c.prepareStatement(sql);
+			ps.setLong(1, codigoPago);
+			ResultSet rs=ps.executeQuery();
+			while(rs.next()){
+				PagosCabecera pc=new PagosCabecera();
+				pc.setEstado(rs.getString("estado"));
+				pc.setMonto(rs.getLong("monto"));
+				lista.add(pc);
+			}
+		} catch (Exception e) {
+			System.out.println("ERROR: "+e.getMessage());
+		}
+		return lista;
 	}
 }

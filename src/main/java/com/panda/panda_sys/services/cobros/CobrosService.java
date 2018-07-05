@@ -50,7 +50,7 @@ public class CobrosService extends Conexion{
 				numeroParametro++;
 				ps.setString(numeroParametro, fondoCredito.getEstado());
 			}
-			if(fondoCredito.getCliente()!= null && ! fondoCredito.getEstado().equals("")){
+			if(fondoCredito.getCliente()!= null && ! fondoCredito.getCliente().equals("")){
 				numeroParametro++;
 				ps.setLong(numeroParametro, fondoCredito.getCliente());
 			}

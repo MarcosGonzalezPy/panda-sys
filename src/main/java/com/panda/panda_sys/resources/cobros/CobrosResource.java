@@ -33,7 +33,7 @@ public class CobrosResource {
 	@GET
 	@Path("listar-fondo-credito")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response listarFondoDebito(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException {
+	public Response listarFondoCredito(@QueryParam("paramJson") String paramJson) throws SQLException, JsonParseException, JsonMappingException, IOException {
 		List<FondoCredito> lista = new ArrayList<FondoCredito>();
 		CobrosService cobrosService = new CobrosService();
 		FondoCredito fondoCredito = new FondoCredito();
