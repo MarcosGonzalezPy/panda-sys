@@ -14,7 +14,7 @@ public class OrdenCompraCabecera {
 	private String usuario;
 	private String estado;
 	private Long proveedorCodigo;
-	private Long numeroFactura;
+	private String numeroFactura;
 	private Date fechaRecepcion;
 	private Long timbrado;
 	private String ruc;
@@ -34,10 +34,10 @@ public class OrdenCompraCabecera {
 	public void setNc(String nc) {
 		this.nc = nc;
 	}
-	public Long getNumeroFactura() {
+	public String getNumeroFactura() {
 		return numeroFactura;
 	}
-	public void setNumeroFactura(Long numeroFactura) {
+	public void setNumeroFactura(String numeroFactura) {
 		this.numeroFactura = numeroFactura;
 	}
 	public Date getFechaRecepcion() {

@@ -16,7 +16,15 @@ public class FondoDebito {
 	private Integer dias;
 	private String documento;
 	private Long documentoNumero;
+	
+	public Long getPagoDetalle() {
+		return pagoDetalle;
+	}
+	public void setPagoDetalle(Long pagoDetalle) {
+		this.pagoDetalle = pagoDetalle;
+	}
 	private String glosa;
+	private Long pagoDetalle;
 	
 	public String getDocumento() {
 		return documento;

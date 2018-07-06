@@ -128,7 +128,7 @@ public class ComprasService extends Conexion {
 			entidad.setProveedorCodigo(rs.getLong("proveedor_codigo"));
 			entidad.setRuc(rs.getString("ruc"));
 			entidad.setTimbrado(rs.getLong("timbrado"));
-			entidad.setNumeroFactura(rs.getLong("numero_factura"));
+			entidad.setNumeroFactura(rs.getString("numero_factura"));
 			entidad.setMonto(rs.getLong("monto"));
 			entidad.setNc(rs.getString("nc"));
 			lista.add(entidad);
@@ -215,17 +215,7 @@ public class ComprasService extends Conexion {
 			c.setAutoCommit(false);
 			
 			Long montoTotal = 0L;
-			String sql = "update orden_compra_cabecera set condicion_compra=?, plazo=?,estado='RECEPCIONADO',"
-					+ " numero_factura=?, fecha_recepcion=current_date, timbrado =?, usuario_recepcion=?, ruc=? where codigo =?  ";
-			PreparedStatement ps = c.prepareStatement(sql);
-			ps.setString(1, cabecera.getCondicionCompra());
-			ps.setLong(2, cabecera.getPlazo()==null? 0: cabecera.getPlazo());
-			ps.setLong(3, cabecera.getNumeroFactura());
-			ps.setLong(4, cabecera.getTimbrado());
-			ps.setString(5, cabecera.getUsuarioRecepcion());
-			ps.setString(6, cabecera.getRuc());
-			ps.setLong(7, cabecera.getCodigo());
-			ps.execute();
+
 			
 			for(OrdenCompraDetalle detalle: listaDetalle){				
 				String sql2 = "update orden_compra_detalle  set cantidad=?, precio=?, iva=?, total=?,  impuesto=? "
@@ -265,8 +255,20 @@ public class ComprasService extends Conexion {
 					ps4.setString(3, cabecera.getSucursal());
 					ps4.execute();					
 				}
-				
 			}
+			String sql = "update orden_compra_cabecera set condicion_compra=?, plazo=?,estado='RECEPCIONADO',"
+					+ " numero_factura=?, fecha_recepcion=current_date, timbrado =?, usuario_recepcion=?, ruc=?, monto=? where codigo =?  ";
+			PreparedStatement ps = c.prepareStatement(sql);
+			ps.setString(1, cabecera.getCondicionCompra());
+			ps.setLong(2, cabecera.getPlazo()==null? 0: cabecera.getPlazo());
+			ps.setString(3, cabecera.getNumeroFactura());
+			ps.setLong(4, cabecera.getTimbrado());
+			ps.setString(5, cabecera.getUsuarioRecepcion());
+			ps.setString(6, cabecera.getRuc());
+			ps.setLong(7, montoTotal);
+			ps.setLong(8, cabecera.getCodigo());
+			ps.execute();
+			
 			Date fechaVencimiento =new Date(System.currentTimeMillis());
 			if(cabecera.getPlazo()!=null && cabecera.getPlazo()>0)
 			fechaVencimiento = sumarDias(new Date(System.currentTimeMillis()), cabecera.getPlazo());

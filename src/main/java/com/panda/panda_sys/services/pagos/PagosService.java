@@ -86,6 +86,7 @@ public class PagosService extends Conexion{
         	entidad.setMonto(rs.getInt("monto"));
         	entidad.setDocumentoNumero(rs.getString("documento_numero"));
         	entidad.setCodigoPersona(rs.getLong("codigo_persona"));
+        	entidad.setPagoDetalle(rs.getLong("pago_detalle"));
         	lista.add(entidad);
         }
 		return lista;
@@ -298,8 +299,8 @@ public class PagosService extends Conexion{
 			ps2.setLong(1, codigo);
 			ResultSet rs2 = ps2.executeQuery();
 			while(rs2.next()){
-				String medioPago = rs.getString("medio_pago");
-				String marcaTarjeta=rs.getString("marca_tarjeta");
+				String medioPago = rs2.getString("medio_pago");
+				String marcaTarjeta=rs2.getString("marca_tarjeta");
 				if(medioPago.contains("CRED-")){
 					String documento = medioPago.substring(5, medioPago.length());					
 					String sql3 = "update fondo_credito set estado ='PENDIENTE' where documento=? and documento_numero =?";
@@ -314,7 +315,7 @@ public class PagosService extends Conexion{
 			ps4.setLong(1, codigo);
 			ps4.execute();
 			
-			String sql5 ="update pago_cabecera set estado = 'ANULADO where codigo_pago=? '";
+			String sql5 ="update pago_cabecera set estado = 'ANULADO' where codigo_pago=? ";
 			PreparedStatement ps5 = c.prepareStatement(sql5);
 			ps5.setLong(1, codigo);
 			ps5.execute();
@@ -329,7 +330,8 @@ public class PagosService extends Conexion{
 			c.close();
 		} catch (Exception e){
 			System.out.println("ERROR: "+e.getMessage());
-			return e.getMessage();
+			c.close();
+			return e.getMessage();			
 		}
 		return "OK";
 	}

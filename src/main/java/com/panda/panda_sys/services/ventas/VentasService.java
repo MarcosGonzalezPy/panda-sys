@@ -656,6 +656,17 @@ public class VentasService extends Conexion {
 				}
 				sql += conector + " cliente= ? ";
 			}
+			
+			if(fondoDebito.getPagoDetalle()!= null && ! fondoDebito.getPagoDetalle().equals("")){
+				String conector = null;
+				if(sql.contains("where")){
+					conector = " and ";
+				}else{
+					conector = " where ";
+				}
+				sql += conector + " pago_detalle= ? ";
+			}
+			
 			PreparedStatement ps= c.prepareStatement(sql);
 			if(fondoDebito.getEstado()!= null && !fondoDebito.getEstado().equals("")){
 				numeroParametro++;
@@ -664,6 +675,11 @@ public class VentasService extends Conexion {
 			if(fondoDebito.getCliente()!= null && ! fondoDebito.getEstado().equals("")){
 				numeroParametro++;
 				ps.setLong(numeroParametro, fondoDebito.getCliente());
+			}
+			
+			if(fondoDebito.getPagoDetalle()!= null && ! fondoDebito.getPagoDetalle().equals("")){
+				numeroParametro++;
+				ps.setLong(numeroParametro, fondoDebito.getPagoDetalle());
 			}
 			
 			ResultSet rs = ps.executeQuery();
@@ -682,6 +698,7 @@ public class VentasService extends Conexion {
 				entidad.setMonto(rs.getInt("monto"));
 				entidad.setNumero(rs.getString("numero"));
 				entidad.setSucursal(rs.getString("sucursal"));
+				entidad.setPagoDetalle(rs.getLong("pago_detalle"));
 				lista.add(entidad);
 			}
 			c.close();
@@ -695,7 +712,7 @@ public class VentasService extends Conexion {
 		try {
 			Connection c = ObtenerConexion();
 			c.setAutoCommit(false);
-
+			
 			String suma = null;
 			String sql = "select sum(total) from factura_detalle where factura_id = ?";
 			PreparedStatement ps = c.prepareStatement(sql);
@@ -707,13 +724,14 @@ public class VentasService extends Conexion {
 			String glosa = NumberToLetterConverter.convertNumberToLetter(suma);
 			
 			String sql2 = " update factura_cabecera set estado='FACTURADO', timbrado= ?, "
-					+ "condicion_compra=?, cuotas=?, glosa=? where numero_factura= ?";
+					+ "condicion_compra=?, cuotas=?, glosa=?, punto_expedicion= '001-001', monto=? where numero_factura= ?";
 			PreparedStatement p2 = c.prepareStatement(sql2);
 			p2.setString(1, param.getTimbrado());
 			p2.setString(2, param.getCondicionCompra());
 			p2.setInt(3, (param.getCuotas() == null) ? 0 : param.getCuotas());
 			p2.setString(4, glosa);
-			p2.setString(5, param.getNumeroFactura());
+			p2.setLong(5, Long.parseLong(suma));
+			p2.setString(6, param.getNumeroFactura());
 			p2.execute();
 			
 			Date fechaVencimiento = new Date(System.currentTimeMillis());
