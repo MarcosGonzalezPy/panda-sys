@@ -121,7 +121,7 @@ public class CajasService extends Conexion{
 	public CajaTimbrado obtenerSucursalTimbrado(String usuario){
 		CajaTimbrado cajaTimbrado =  new CajaTimbrado();
 		try {
-			String sql =" select a.*, b.expedicion, b.sucursal from cajas_movimientos a, cajas b "
+			String sql =" select  b.expedicion, b.sucursal, (select codigo from timbrados where estado = 'A') as timbrado, a.codigo from cajas_movimientos a, cajas b "
 				+ " where b.codigo = a.codigo_caja and a.estado = 'ABIERTO' "
 				+ "and usuario = '"+usuario+"'";
 			Statement statement = con.ObtenerConexion().createStatement();
@@ -129,7 +129,8 @@ public class CajasService extends Conexion{
 			while(rs.next()){
 				cajaTimbrado.setCaja(rs.getString("codigo"));
 				cajaTimbrado.setSucursal(rs.getString("sucursal"));
-				cajaTimbrado.setTimbrado(rs.getString("expedicion"));
+				cajaTimbrado.setTimbrado(rs.getString("timbrado"));
+				cajaTimbrado.setPuntoExpedicion(rs.getString("expedicion"));
 			}
 		} catch (Exception e) {
 			return null;

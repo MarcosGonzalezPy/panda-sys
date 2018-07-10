@@ -724,14 +724,17 @@ public class VentasService extends Conexion {
 			String glosa = NumberToLetterConverter.convertNumberToLetter(suma);
 			
 			String sql2 = " update factura_cabecera set estado='FACTURADO', timbrado= ?, "
-					+ "condicion_compra=?, cuotas=?, glosa=?, punto_expedicion= '001-001', monto=? where numero_factura= ?";
+					+ "condicion_compra=?, cuotas=?, glosa=?, monto=? , punto_expedicion= ?, caja=?, cajero=? where numero_factura= ?";
 			PreparedStatement p2 = c.prepareStatement(sql2);
 			p2.setString(1, param.getTimbrado());
 			p2.setString(2, param.getCondicionCompra());
 			p2.setInt(3, (param.getCuotas() == null) ? 0 : param.getCuotas());
 			p2.setString(4, glosa);
 			p2.setLong(5, Long.parseLong(suma));
-			p2.setString(6, param.getNumeroFactura());
+			p2.setString(6, param.getPuntoExpedicion());
+			p2.setLong(7, Long.parseLong(param.getCaja()));
+			p2.setString(8, param.getCajero());
+			p2.setString(9, param.getNumeroFactura());
 			p2.execute();
 			
 			Date fechaVencimiento = new Date(System.currentTimeMillis());

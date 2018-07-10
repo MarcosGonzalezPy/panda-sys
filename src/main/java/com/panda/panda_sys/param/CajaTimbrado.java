@@ -5,7 +5,14 @@ public class CajaTimbrado {
 	private String timbrado;
 	private String sucursal;
 	private String caja;
+	private String puntoExpedicion;
 	
+	public String getPuntoExpedicion() {
+		return puntoExpedicion;
+	}
+	public void setPuntoExpedicion(String puntoExpedicion) {
+		this.puntoExpedicion = puntoExpedicion;
+	}
 	public String getTimbrado() {
 		return timbrado;
 	}

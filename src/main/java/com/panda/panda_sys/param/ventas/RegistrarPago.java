@@ -15,6 +15,8 @@ public class RegistrarPago {
 	private String sucursal;
 	private Integer cliente;
 	private Long monto;
+	private String puntoExpedicion;
+
 	private List<FormaPago> listaFormaPago;
 	
 	public Long getMonto() {
@@ -66,9 +68,7 @@ public class RegistrarPago {
 	}
 	public void setTimbrado(String timbrado) {
 		this.timbrado = timbrado;
-	}
-	
-	
+	}	
 	public List<FormaPago> getListaFormaPago() {
 		return listaFormaPago;
 	}
@@ -93,5 +93,11 @@ public class RegistrarPago {
 	}
 	public void setPlazo(Integer plazo) {
 		this.plazo = plazo;
+	}
+	public String getPuntoExpedicion() {
+		return puntoExpedicion;
+	}
+	public void setPuntoExpedicion(String puntoExpedicion) {
+		this.puntoExpedicion = puntoExpedicion;
 	}
 }
