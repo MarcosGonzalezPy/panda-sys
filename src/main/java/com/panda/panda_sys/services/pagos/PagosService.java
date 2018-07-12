@@ -1,7 +1,6 @@
 package com.panda.panda_sys.services.pagos;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.panda.panda_sys.model.Cheques;
-import com.panda.panda_sys.model.FondoCredito;
 import com.panda.panda_sys.model.FondoDebito;
 import com.panda.panda_sys.model.pagos.DetallePago;
 import com.panda.panda_sys.model.pagos.Pagos;
